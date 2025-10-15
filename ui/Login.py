@@ -1,28 +1,30 @@
-# ui/Login.py (VERSÃO FINAL CORRIGIDA)
+# ui/Login.py
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox
 )
-from PySide6.QtCore import Qt
-from TelaPrincipal import TelaPrincipal
+from PySide6.QtCore import Qt, Signal  # Importa a classe Signal
 from Cadastro import TelaCadastro
-import sys
 
 
 class TelaLogin(QWidget):
+    # --- 1. ESTE É O "RÁDIO" PARA COMUNICAÇÃO ---
+    login_sucesso = Signal()
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Login - Sistema Financeiro")
         self.setFixedSize(400, 350)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        self.tela_principal = None
         self.tela_cadastro = None
 
         layout_principal = QVBoxLayout(self)
         layout_principal.setAlignment(Qt.AlignCenter)
         layout_principal.setContentsMargins(40, 40, 40, 40)
+        self.setLayout(layout_principal)
 
+        # (Toda a sua interface de Título, campos de texto e botões continua aqui)
         # Título
         self.label_titulo = QLabel("Acesso ao Sistema")
         self.label_titulo.setAlignment(Qt.AlignCenter)
@@ -73,17 +75,12 @@ class TelaLogin(QWidget):
         senha = self.entry_senha.text()
 
         if usuario == "admin" and senha == "1234":
-            self.hide()
-            self.tela_principal = TelaPrincipal()
-            self.tela_principal.show()
+            # --- 2. AQUI AVISAMOS O CONTROLADOR E SAÍMOS DE CENA ---
+            self.login_sucesso.emit()
         else:
             QMessageBox.critical(self, "Erro", "Usuário ou senha incorretos!")
 
     def abrir_cadastro(self):
-        # AQUI ESTÁ A MUDANÇA PRINCIPAL:
-        # Removi o 'self' de dentro dos parênteses de TelaCadastro().
-        # Isso cria a janela de cadastro como uma janela independente,
-        # resolvendo o problema de tamanho.
         if not self.tela_cadastro or not self.tela_cadastro.isVisible():
-            self.tela_cadastro = TelaCadastro()  # <-- MUDANÇA CRÍTICA AQUI
+            self.tela_cadastro = TelaCadastro()
             self.tela_cadastro.show()
