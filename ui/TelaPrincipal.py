@@ -1,68 +1,69 @@
 # TelaPrincipal.py
 
-import customtkinter as ctk
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel
+from PySide6.QtCore import Qt
+from Resumo import AbaResumo  # Importa a AbaResumo convertida
+# Importa a tela de despesas que já usa PySide6
+from despesas import TelaDespesas
+from limite import AbaLimites
+from receitas import AbaReceitas
 
 
-class TelaPrincipal(ctk.CTk):
+class TelaPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.title("Painel Financeiro Principal")
-        self.geometry("800x600")
-        self.resizable(True, True)
+        self.setWindowTitle("Painel Financeiro Principal")
+        self.setGeometry(100, 100, 800, 600)
+        self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        # Configura o grid para que o TabView ocupe todo o espaço
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        # Widget central para conter o layout
+        widget_central = QWidget()
+        self.setCentralWidget(widget_central)
+        layout_principal = QVBoxLayout(widget_central)
 
-        # --- Cria o sistema de Abas (TabView) ---
-        self.tab_view = ctk.CTkTabview(self, fg_color="#1e1e2f")
-        self.tab_view.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        # --- Cria o sistema de Abas (QTabWidget) ---
+        self.tab_view = QTabWidget()
+        self.tab_view.setStyleSheet("""
+            QTabWidget::pane {
+                border: none;
+            }
+            QTabBar::tab {
+                background: #2c2c3c;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QTabBar::tab:selected {
+                background: #3b82f6;
+            }
+        """)
+        layout_principal.addWidget(self.tab_view)
 
         # --- Adiciona as abas ---
-        self.tab_view.add("Resumo")
-        self.tab_view.add("Limites")
-        self.tab_view.add("Metas")
-        self.tab_view.add("Despesas")
-
-        # Define a aba inicial que será exibida
-        self.tab_view.set("Resumo")
-
-        # --- Adiciona conteúdo de exemplo em cada aba ---
-        self.criar_conteudo_abas()
-
-    def criar_conteudo_abas(self):
         # Aba de Resumo
-        frame_resumo = self.tab_view.tab("Resumo")
-        label_resumo = ctk.CTkLabel(
-            frame_resumo,
-            text="Aqui ficará o resumo financeiro.",
-            font=ctk.CTkFont(size=20)
-        )
-        label_resumo.pack(padx=20, pady=20, expand=True)
-
-        # Aba de Limites
-        frame_limites = self.tab_view.tab("Limites")
-        label_limites = ctk.CTkLabel(
-            frame_limites,
-            text="Aqui ficarão os controles de limites de gastos.",
-            font=ctk.CTkFont(size=20)
-        )
-        label_limites.pack(padx=20, pady=20, expand=True)
-
-        # Aba de Metas
-        frame_metas = self.tab_view.tab("Metas")
-        label_metas = ctk.CTkLabel(
-            frame_metas,
-            text="Aqui ficará o acompanhamento de metas.",
-            font=ctk.CTkFont(size=20)
-        )
-        label_metas.pack(padx=20, pady=20, expand=True)
+        aba_resumo = AbaResumo()
+        self.tab_view.addTab(aba_resumo, "Resumo")
 
         # Aba de Despesas
-        frame_despesas = self.tab_view.tab("Despesas")
-        label_despesas = ctk.CTkLabel(
-            frame_despesas,
-            text="Aqui será o local para lançamento de despesas.",
-            font=ctk.CTkFont(size=20)
-        )
-        label_despesas.pack(padx=20, pady=20, expand=True)
+        aba_despesas = TelaDespesas()
+        self.tab_view.addTab(aba_despesas, "Despesas")
+
+        # Aba de Limites (Exemplo)
+        aba_limites = AbaLimites()
+        self.tab_view.addTab(aba_limites, "Limites")
+
+        # Aba de Receitas (Exemplo)
+        aba_receitas = AbaReceitas()
+        self.tab_view.addTab(aba_receitas, "Receitas")
+
+        # Aba de Metas (Exemplo)
+        aba_metas = QWidget()
+        layout_metas = QVBoxLayout(aba_metas)
+        label_metas = QLabel("Aqui ficará o acompanhamento de metas.")
+        label_metas.setAlignment(Qt.AlignCenter)
+        label_metas.setStyleSheet("font-size: 20px;")
+        layout_metas.addWidget(label_metas)
+        self.tab_view.addTab(aba_metas, "Metas")
+
+        # Define a aba inicial que será exibida
+        self.tab_view.setCurrentIndex(0)

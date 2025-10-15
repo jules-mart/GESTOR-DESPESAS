@@ -1,10 +1,13 @@
+# ui/Login.py (VERSÃO FINAL CORRIGIDA)
+
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox
+    QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox
 )
 from PySide6.QtCore import Qt
-from TelaPrincipal import TelaPrincipal  # sua tela principal
-from Cadastro import TelaCadastro       # sua tela de cadastro
+from TelaPrincipal import TelaPrincipal
+from Cadastro import TelaCadastro
 import sys
+
 
 class TelaLogin(QWidget):
     def __init__(self):
@@ -13,10 +16,12 @@ class TelaLogin(QWidget):
         self.setFixedSize(400, 350)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        layout_principal = QVBoxLayout()
+        self.tela_principal = None
+        self.tela_cadastro = None
+
+        layout_principal = QVBoxLayout(self)
         layout_principal.setAlignment(Qt.AlignCenter)
         layout_principal.setContentsMargins(40, 40, 40, 40)
-        self.setLayout(layout_principal)
 
         # Título
         self.label_titulo = QLabel("Acesso ao Sistema")
@@ -30,7 +35,6 @@ class TelaLogin(QWidget):
         self.entry_usuario.setPlaceholderText("Usuário")
         self.entry_usuario.setStyleSheet(
             "background-color: #2c2c3c; color: white; padding: 8px; border-radius: 8px;"
-            "placeholder-color: #aaaaaa;"
         )
         layout_principal.addWidget(self.entry_usuario)
         layout_principal.addSpacing(10)
@@ -41,7 +45,6 @@ class TelaLogin(QWidget):
         self.entry_senha.setEchoMode(QLineEdit.Password)
         self.entry_senha.setStyleSheet(
             "background-color: #2c2c3c; color: white; padding: 8px; border-radius: 8px;"
-            "placeholder-color: #aaaaaa;"
         )
         layout_principal.addWidget(self.entry_senha)
         layout_principal.addSpacing(20)
@@ -70,12 +73,17 @@ class TelaLogin(QWidget):
         senha = self.entry_senha.text()
 
         if usuario == "admin" and senha == "1234":
-            self.close()
-            tela_principal = TelaPrincipal()
-            tela_principal.show()
+            self.hide()
+            self.tela_principal = TelaPrincipal()
+            self.tela_principal.show()
         else:
             QMessageBox.critical(self, "Erro", "Usuário ou senha incorretos!")
 
     def abrir_cadastro(self):
-        TelaCadastro(self)
-
+        # AQUI ESTÁ A MUDANÇA PRINCIPAL:
+        # Removi o 'self' de dentro dos parênteses de TelaCadastro().
+        # Isso cria a janela de cadastro como uma janela independente,
+        # resolvendo o problema de tamanho.
+        if not self.tela_cadastro or not self.tela_cadastro.isVisible():
+            self.tela_cadastro = TelaCadastro()  # <-- MUDANÇA CRÍTICA AQUI
+            self.tela_cadastro.show()

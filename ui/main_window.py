@@ -1,7 +1,10 @@
-from Login import TelaLogin
+# main.py (localizado em GESTOR-DESPESAS/main.py)
+import sys
+from PySide6.QtWidgets import QApplication
+from Login import TelaLogin  # Importa a partir do pacote 'ui'
 
-# Este bloco de código verifica se o arquivo está sendo executado diretamente
-# e, em caso afirmativo, inicia a aplicação.
 if __name__ == "__main__":
-    app = TelaLogin()
-    app.mainloop()
+    app = QApplication(sys.argv)
+    janela_login = TelaLogin()
+    janela_login.show()
+    sys.exit(app.exec())
