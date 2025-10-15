@@ -1,134 +1,127 @@
-import customtkinter as ctk
-from tkinter import messagebox
+# Cadastro_PySide6.py
 
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QApplication, QScrollArea
+)
+from PySide6.QtCore import Qt
+import sys
 
-class TelaCadastro(ctk.CTkToplevel):
-    def __init__(self, master=None):
-        super().__init__(master)
-        self.title("Cadastro de Usuário")
-        self.geometry("500x650")
-        self.resizable(False, False)
-        self.grab_set()
+class TelaCadastro(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Cadastro de Usuário")
+        self.setFixedSize(500, 650)
+        self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        # O frame principal ainda usa .pack para preencher a janela
-        self.frame = ctk.CTkFrame(self, fg_color="#1e1e2f")
-        self.frame.pack(padx=30, pady=30, fill="both", expand=True)
+        # Layout principal com scroll (opcional para telas pequenas)
+        scroll = QScrollArea(self)
+        scroll.setGeometry(0, 0, 500, 650)
+        scroll.setWidgetResizable(True)
+        container = QWidget()
+        scroll.setWidget(container)
 
-        # --- CONFIGURANDO O LAYOUT GRID ---
-        # Faz a coluna 0 (a única que usaremos) se expandir para preencher o frame
-        self.frame.grid_columnconfigure(0, weight=1)
+        layout = QVBoxLayout(container)
+        layout.setAlignment(Qt.AlignTop)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(10)
 
         # Título
-        self.label_titulo = ctk.CTkLabel(
-            self.frame,
-            text="🧾 Cadastro de Usuário",
-            font=ctk.CTkFont(size=22, weight="bold"),
-            text_color="#ffffff"
-        )
-        # sticky="ew" faz o widget se esticar horizontalmente (leste-oeste)
-        self.label_titulo.grid(row=0, column=0, padx=30, pady=(15, 5))
+        titulo = QLabel("🧾 Cadastro de Usuário")
+        titulo.setAlignment(Qt.AlignCenter)
+        titulo.setStyleSheet("font-size: 22px; font-weight: bold;")
+        layout.addWidget(titulo)
 
-        # Subtítulo
-        self.label_subtitulo = ctk.CTkLabel(
-            self.frame,
-            text="Preencha seus dados pessoais e financeiros",
-            font=ctk.CTkFont(size=13),
-            text_color="#a5a5a5"
-        )
-        self.label_subtitulo.grid(row=1, column=0, padx=30, pady=(0, 15))
+        subtitulo = QLabel("Preencha seus dados pessoais e financeiros")
+        subtitulo.setAlignment(Qt.AlignCenter)
+        subtitulo.setStyleSheet("font-size: 13px; color: #a5a5a5;")
+        layout.addWidget(subtitulo)
+        layout.addSpacing(15)
 
-        # --- Campos de Dados Pessoais ---
-        self.entry_nome = ctk.CTkEntry(
-            self.frame, placeholder_text="Nome completo",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_nome.grid(row=2, column=0, padx=30, pady=8, sticky="ew")
+        # Campos de Dados Pessoais
+        self.entry_nome = QLineEdit()
+        self.entry_nome.setPlaceholderText("Nome completo")
+        self._estilo_campo(self.entry_nome)
+        layout.addWidget(self.entry_nome)
 
-        self.entry_data_nasc = ctk.CTkEntry(
-            self.frame, placeholder_text="Data de nascimento (DD/MM/AAAA)",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_data_nasc.grid(
-            row=3, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_data_nasc = QLineEdit()
+        self.entry_data_nasc.setPlaceholderText("Data de nascimento (DD/MM/AAAA)")
+        self._estilo_campo(self.entry_data_nasc)
+        layout.addWidget(self.entry_data_nasc)
 
-        self.entry_cpf = ctk.CTkEntry(
-            self.frame, placeholder_text="CPF (somente números)",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_cpf.grid(row=4, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_cpf = QLineEdit()
+        self.entry_cpf.setPlaceholderText("CPF (somente números)")
+        self._estilo_campo(self.entry_cpf)
+        layout.addWidget(self.entry_cpf)
 
-        self.entry_profissao = ctk.CTkEntry(
-            self.frame, placeholder_text="Profissão",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_profissao.grid(
-            row=5, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_profissao = QLineEdit()
+        self.entry_profissao.setPlaceholderText("Profissão")
+        self._estilo_campo(self.entry_profissao)
+        layout.addWidget(self.entry_profissao)
 
-        self.entry_renda = ctk.CTkEntry(
-            self.frame, placeholder_text="Renda mensal (R$)",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_renda.grid(row=6, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_renda = QLineEdit()
+        self.entry_renda.setPlaceholderText("Renda mensal (R$)")
+        self._estilo_campo(self.entry_renda)
+        layout.addWidget(self.entry_renda)
 
-        # --- Campos de Dados de Acesso ---
-        self.label_login = ctk.CTkLabel(
-            self.frame, text="Dados de Acesso", font=ctk.CTkFont(size=14, weight="bold"), text_color="#ffffff"
-        )
-        self.label_login.grid(row=7, column=0, padx=30, pady=(20, 5))
+        # Dados de Acesso
+        label_acesso = QLabel("Dados de Acesso")
+        label_acesso.setStyleSheet("font-size: 14px; font-weight: bold;")
+        layout.addWidget(label_acesso)
 
-        self.entry_usuario = ctk.CTkEntry(
-            self.frame, placeholder_text="Usuário",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_usuario.grid(row=8, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_usuario = QLineEdit()
+        self.entry_usuario.setPlaceholderText("Usuário")
+        self._estilo_campo(self.entry_usuario)
+        layout.addWidget(self.entry_usuario)
 
-        self.entry_senha = ctk.CTkEntry(
-            self.frame, placeholder_text="Senha", show="*",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_senha.grid(row=9, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_senha = QLineEdit()
+        self.entry_senha.setPlaceholderText("Senha")
+        self.entry_senha.setEchoMode(QLineEdit.Password)
+        self._estilo_campo(self.entry_senha)
+        layout.addWidget(self.entry_senha)
 
-        self.entry_confirmar = ctk.CTkEntry(
-            self.frame, placeholder_text="Confirmar senha", show="*",
-            fg_color="#2c2c3c", text_color="#ffffff", placeholder_text_color="#aaaaaa"
-        )
-        self.entry_confirmar.grid(
-            row=10, column=0, padx=30, pady=8, sticky="ew")
+        self.entry_confirmar = QLineEdit()
+        self.entry_confirmar.setPlaceholderText("Confirmar senha")
+        self.entry_confirmar.setEchoMode(QLineEdit.Password)
+        self._estilo_campo(self.entry_confirmar)
+        layout.addWidget(self.entry_confirmar)
 
-        # --- BOTÃO DE CADASTRO ---
-        self.btn_cadastrar = ctk.CTkButton(
-            self.frame,
-            text="Cadastrar",
-            command=self.cadastrar_usuario,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#16a34a",
-            hover_color="#15803d",
-            text_color="white"
+        # Botão Cadastrar
+        self.btn_cadastrar = QPushButton("Cadastrar")
+        self.btn_cadastrar.setFixedHeight(40)
+        self.btn_cadastrar.setStyleSheet(
+            "background-color: #16a34a; color: white; font-weight: bold; font-size: 14px; border-radius: 8px;"
         )
-        self.btn_cadastrar.grid(
-            row=11, column=0, padx=30, pady=20, sticky="ew")
+        self.btn_cadastrar.clicked.connect(self.cadastrar_usuario)
+        layout.addWidget(self.btn_cadastrar)
+
+    def _estilo_campo(self, campo):
+        campo.setStyleSheet(
+            "background-color: #2c2c3c; color: white; padding: 8px; border-radius: 8px;"
+        )
 
     def cadastrar_usuario(self):
-        senha = self.entry_senha.get()
-        confirmar_senha = self.entry_confirmar.get()
+        senha = self.entry_senha.text()
+        confirmar_senha = self.entry_confirmar.text()
 
         if senha != confirmar_senha:
-            messagebox.showerror("Erro de Cadastro",
-                                 "As senhas não coincidem!", parent=self)
+            QMessageBox.critical(self, "Erro de Cadastro", "As senhas não coincidem!")
             return
 
         campos = [
-            self.entry_nome.get(), self.entry_data_nasc.get(), self.entry_cpf.get(),
-            self.entry_profissao.get(), self.entry_renda.get(), self.entry_usuario.get(),
-            self.entry_senha.get()
+            self.entry_nome.text(),
+            self.entry_data_nasc.text(),
+            self.entry_cpf.text(),
+            self.entry_profissao.text(),
+            self.entry_renda.text(),
+            self.entry_usuario.text(),
+            self.entry_senha.text()
         ]
 
-        if any(campo == "" for campo in campos):
-            messagebox.showwarning(
-                "Atenção", "Por favor, preencha todos os campos.", parent=self)
+        if any(campo.strip() == "" for campo in campos):
+            QMessageBox.warning(self, "Atenção", "Por favor, preencha todos os campos.")
             return
 
-        messagebox.showinfo(
-            "Sucesso", "Usuário cadastrado com sucesso!", parent=self)
-        self.destroy()
+        QMessageBox.information(self, "Sucesso", "Usuário cadastrado com sucesso!")
+        self.close()
+
+
