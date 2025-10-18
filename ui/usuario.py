@@ -17,7 +17,7 @@ class AbaUsuario(QWidget):
 
         # --- Dados de exemplo (carregue os dados do utilizador logado) ---
         self.dados_usuario = {
-            "nome": "Alessandra",
+            "nome": "Pessoa",
             "data_nasc": "15/10/1990",
             "cpf": "123.456.789-00",
             "profissao": "Desenvolvedora Python",
