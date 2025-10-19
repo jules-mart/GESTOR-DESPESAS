@@ -40,10 +40,6 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.addTab(TelaDespesas(), "Despesas")
         self.tab_view.addTab(AbaLimites(), "Limites")
 
-        aba_usuario = AbaUsuario()
-        aba_usuario.logout_solicitado.connect(self.realizar_logout)
-        self.tab_view.addTab(aba_usuario, "Usuário")
-
         # Aba de Metas de exemplo
         aba_metas = QWidget()
         layout_metas = QVBoxLayout(aba_metas)
@@ -52,6 +48,10 @@ class TelaPrincipal(QMainWindow):
         label_metas.setStyleSheet("font-size: 20px;")
         layout_metas.addWidget(label_metas)
         self.tab_view.addTab(aba_metas, "Metas")
+
+        aba_usuario = AbaUsuario()
+        aba_usuario.logout_solicitado.connect(self.realizar_logout)
+        self.tab_view.addTab(aba_usuario, "Usuário")
 
         self.tab_view.setCurrentIndex(0)
 
