@@ -18,6 +18,9 @@ class Transacao(Base, metaclass=BaseMeta):
     usuario_id = Column(Integer, ForeignKey("TUSU.id"))
     usuario = relationship("Usuario", back_populates="transacoes")
 
+    metodo_pagamento_id = Column(Integer, ForeignKey("TMETODO_PAGAMENTO.id"))
+    metodo_pagamento = relationship("MetodoDePagamento", back_populates="transacoes")
+
     __mapper_args__ = {
         "polymorphic_on": tipo,
         "polymorphic_identity": "transacao"

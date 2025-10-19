@@ -8,6 +8,7 @@ from receitas import AbaReceitas
 from despesas import TelaDespesas
 from limite import AbaLimites
 from usuario import AbaUsuario
+from meta import AbaMeta
 
 
 class TelaPrincipal(QMainWindow):
@@ -39,6 +40,7 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.addTab(AbaReceitas(), "Receitas")
         self.tab_view.addTab(TelaDespesas(), "Despesas")
         self.tab_view.addTab(AbaLimites(), "Limites")
+<<<<<<< HEAD
 
         # Aba de Metas de exemplo
         aba_metas = QWidget()
@@ -49,11 +51,20 @@ class TelaPrincipal(QMainWindow):
         layout_metas.addWidget(label_metas)
         self.tab_view.addTab(aba_metas, "Metas")
 
+=======
+        receitas_exemplo = {i: 5000 for i in range(1, 13)}
+        despesas_exemplo = {i: 3000 for i in range(1, 13)}
+        self.tab_view.addTab(AbaMeta(receitas=receitas_exemplo, despesas=despesas_exemplo),"Metas")
+        
+>>>>>>> d41985299f7ca979b1444e31bb73edcb382ad417
         aba_usuario = AbaUsuario()
         aba_usuario.logout_solicitado.connect(self.realizar_logout)
         self.tab_view.addTab(aba_usuario, "Usuário")
 
+<<<<<<< HEAD
         self.tab_view.setCurrentIndex(0)
+=======
+>>>>>>> d41985299f7ca979b1444e31bb73edcb382ad417
 
     # --- 3. ESTA FUNÇÃO USA O "RÁDIO" PARA AVISAR O main.py ---
     def realizar_logout(self):
