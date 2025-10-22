@@ -1,5 +1,8 @@
 from database.db_session import SessionLocal
 from models.usuario import Usuario
+from repositories.auth_utils import hash_password, verify_password
+from sqlalchemy.exc import IntegrityError
+
 
 class UsuarioRepository:
     def __init__(self, session_factory=SessionLocal):
@@ -10,15 +13,28 @@ class UsuarioRepository:
         session.add(user)
         session.commit()
         session.close()
-
-    def get_by_id(self, user_id: int):
+    
+    def verificar_credenciais(self, usuario: str, senha: str):
         session = self._session_factory()
-        user = session.get(Usuario, user_id)
-        session.close()
-        return user
+        user = session.query(Usuario).filter(Usuario.user == usuario).first()
+        if user and verify_password(senha, user.senha):
+            return user
+        return None
+    
+    def criar_usuario(self, nome, data_nasc, cpf, profissao, renda, usuario, senha):
+        novo_usuario = Usuario(
+            nome=nome,
+            data_nasc=data_nasc,
+            cpf=cpf,
+            profissao=profissao,
+            renda_mensal=renda,
+            user=usuario,
+            senha=hash_password(senha)
+        )
 
-    def get_all(self):
-        session = self._session_factory()
-        users = session.query(Usuario).all()
-        session.close()
-        return users
+        try:
+            self.add(novo_usuario)
+            return True
+        except IntegrityError:
+            self.db.rollback()
+            return False

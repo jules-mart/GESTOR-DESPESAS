@@ -1,12 +1,13 @@
 # main.py (VERSÃO FINAL E CORRIGIDA)
 import sys
 from PySide6.QtWidgets import QApplication
-from Login import TelaLogin
-from TelaPrincipal import TelaPrincipal
+from ui.Login import TelaLogin
+from ui.TelaPrincipal import TelaPrincipal
 
 
 class AppController:
-    def __init__(self):
+    def __init__(self, di_container):
+        self.di_container = di_container
         self.app = QApplication(sys.argv)
         self.tela_login = None
         self.tela_principal = None
@@ -18,7 +19,7 @@ class AppController:
         if self.tela_principal:
             self.tela_principal.close()
 
-        self.tela_login = TelaLogin()
+        self.tela_login = TelaLogin(self.di_container.usuario_repository)
         self.tela_login.login_sucesso.connect(self.mostrar_principal)
         self.tela_login.show()
 
@@ -36,6 +37,4 @@ class AppController:
         sys.exit(self.app.exec())
 
 
-if __name__ == "__main__":
-    controller = AppController()
-    controller.run()
+

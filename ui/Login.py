@@ -4,15 +4,16 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox
 )
 from PySide6.QtCore import Qt, Signal  # Importa a classe Signal
-from Cadastro import TelaCadastro
+from ui.Cadastro import TelaCadastro
 
 
 class TelaLogin(QWidget):
     # --- 1. ESTE É O "RÁDIO" PARA COMUNICAÇÃO ---
     login_sucesso = Signal()
 
-    def __init__(self):
+    def __init__(self, usuario_repository):
         super().__init__()
+        self.usuario_repository = usuario_repository
         self.setWindowTitle("Login - Sistema Financeiro")
         self.setFixedSize(400, 350)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
@@ -71,16 +72,17 @@ class TelaLogin(QWidget):
         layout_principal.addWidget(self.btn_cadastro)
 
     def verificar_login(self):
-        usuario = self.entry_usuario.text()
-        senha = self.entry_senha.text()
+        usuario = self.entry_usuario.text().strip()
+        senha = self.entry_senha.text().strip()
 
-        if usuario == "admin" and senha == "1234":
-            # --- 2. AQUI AVISAMOS O CONTROLADOR E SAÍMOS DE CENA ---
+        user = self.usuario_repository.verificar_credenciais(usuario, senha)
+
+        if user:
             self.login_sucesso.emit()
         else:
-            QMessageBox.critical(self, "Erro", "Usuário ou senha incorretos!")
+            QMessageBox.critical(None, "Erro", "Usuário ou senha incorretos!")
 
     def abrir_cadastro(self):
         if not self.tela_cadastro or not self.tela_cadastro.isVisible():
-            self.tela_cadastro = TelaCadastro()
+            self.tela_cadastro = TelaCadastro(self.usuario_repository)
             self.tela_cadastro.show()

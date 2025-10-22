@@ -7,8 +7,9 @@ from PySide6.QtCore import Qt
 
 
 class TelaCadastro(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, usuario_repository, parent=None):
         super().__init__(parent)
+        self.usuario_repository = usuario_repository
         self.setWindowTitle("Cadastro de Usuário")
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
         # Aumentei o tamanho mínimo para garantir que tudo caiba confortavelmente
@@ -138,6 +139,18 @@ class TelaCadastro(QWidget):
                 self, "Atenção", "Por favor, preencha todos os campos.")
             return
 
-        QMessageBox.information(
-            self, "Sucesso", "Usuário cadastrado com sucesso!")
-        self.close()
+        sucesso = self.usuario_repository.criar_usuario(
+            nome=self.entry_nome.text(),
+            data_nasc=self.entry_data_nasc.text(),
+            cpf=self.entry_cpf.text(),
+            profissao=self.entry_profissao.text(),
+            renda=self.entry_renda.text(),
+            usuario=self.entry_usuario.text(),
+            senha=senha
+        )
+
+        if sucesso:
+            QMessageBox.information(self, "Sucesso", "Usuário cadastrado com sucesso!")
+            self.close()
+        else:
+            QMessageBox.critical(self, "Erro", "Usuário já existe!")

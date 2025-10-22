@@ -17,5 +17,5 @@ def init_db():
     from models.transacao import Transacao
     from models.despesa import Despesa
     from models.receita import Receita
+    from models.metodo_pagamento import MetodoDePagamento
     Base.metadata.create_all(bind=engine)
-    print("✅ Database initialized and tables created.")

@@ -3,12 +3,12 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel
 # <-- 1. VERIFIQUE SE 'Signal' ESTÁ A SER IMPORTADO
 from PySide6.QtCore import Qt, Signal
-from Resumo import AbaResumo
-from receitas import AbaReceitas
-from despesas import TelaDespesas
-from limite import AbaLimites
-from usuario import AbaUsuario
-from meta import AbaMeta
+from ui.Resumo import AbaResumo
+from ui.receitas import AbaReceitas
+from ui.despesas import TelaDespesas
+from ui.limite import AbaLimites
+from ui.usuario import AbaUsuario
+from ui.meta import AbaMeta
 
 
 class TelaPrincipal(QMainWindow):
