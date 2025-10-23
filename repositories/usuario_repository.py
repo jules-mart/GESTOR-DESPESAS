@@ -38,3 +38,19 @@ class UsuarioRepository:
         except IntegrityError:
             self.db.rollback()
             return False
+        
+    def atualizar_usuario(self, user_id, **dados):
+        session = self._session_factory()
+        user = session.query(Usuario).filter(Usuario.id == user_id).first()
+
+        if not user:
+            return None
+        
+        for campo, valor in dados.items():
+            if hasattr(user, campo) and valor is not None:
+                setattr(user, campo, valor)
+
+        session.commit()
+        session.refresh(user)
+        session.close()
+        return user

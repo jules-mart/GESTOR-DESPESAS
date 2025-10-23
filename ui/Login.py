@@ -11,9 +11,9 @@ class TelaLogin(QWidget):
     # --- 1. ESTE É O "RÁDIO" PARA COMUNICAÇÃO ---
     login_sucesso = Signal()
 
-    def __init__(self, usuario_repository):
+    def __init__(self, di_container):
         super().__init__()
-        self.usuario_repository = usuario_repository
+        self.di_container = di_container
         self.setWindowTitle("Login - Sistema Financeiro")
         self.setFixedSize(400, 350)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
@@ -75,14 +75,15 @@ class TelaLogin(QWidget):
         usuario = self.entry_usuario.text().strip()
         senha = self.entry_senha.text().strip()
 
-        user = self.usuario_repository.verificar_credenciais(usuario, senha)
+        user = self.di_container.usuario_repository.verificar_credenciais(usuario, senha)
 
         if user:
+            self.di_container.usuario_ativo = user
             self.login_sucesso.emit()
         else:
             QMessageBox.critical(None, "Erro", "Usuário ou senha incorretos!")
 
     def abrir_cadastro(self):
         if not self.tela_cadastro or not self.tela_cadastro.isVisible():
-            self.tela_cadastro = TelaCadastro(self.usuario_repository)
+            self.tela_cadastro = TelaCadastro(self.di_container.usuario_repository)
             self.tela_cadastro.show()

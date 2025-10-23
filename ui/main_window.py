@@ -19,12 +19,12 @@ class AppController:
         if self.tela_principal:
             self.tela_principal.close()
 
-        self.tela_login = TelaLogin(self.di_container.usuario_repository)
+        self.tela_login = TelaLogin(self.di_container)
         self.tela_login.login_sucesso.connect(self.mostrar_principal)
         self.tela_login.show()
 
     def mostrar_principal(self):
-        self.tela_principal = TelaPrincipal()
+        self.tela_principal = TelaPrincipal(self.di_container)
         self.tela_principal.logout_efetuado.connect(self.mostrar_login)
         self.tela_principal.show()
 

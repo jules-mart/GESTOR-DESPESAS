@@ -15,8 +15,9 @@ class TelaPrincipal(QMainWindow):
     # --- 2. ESTE É O "RÁDIO" (SINAL) QUE ESTAVA EM FALTA ---
     logout_efetuado = Signal()
 
-    def __init__(self):
+    def __init__(self, di_container):
         super().__init__()
+        self.di_container = di_container
         self.setWindowTitle("Painel Financeiro Principal")
         self.setGeometry(100, 100, 900, 700)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
@@ -46,7 +47,7 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.addTab(
             AbaMeta(receitas=receitas_exemplo, despesas=despesas_exemplo), "Metas")
 
-        aba_usuario = AbaUsuario()
+        aba_usuario = AbaUsuario(self.di_container)
         aba_usuario.logout_solicitado.connect(self.realizar_logout)
         self.tab_view.addTab(aba_usuario, "Usuário")
 

@@ -6,3 +6,5 @@ class DIContainer:
         # Create shared instances
         self.transacao_repository = TransacaoRepository()
         self.usuario_repository = UsuarioRepository()
+
+        self.usuario_ativo = None
