@@ -39,7 +39,7 @@ class TelaPrincipal(QMainWindow):
         # --- Adiciona as abas ---
         self.tab_view.addTab(AbaResumo(), "Resumo")
         self.tab_view.addTab(AbaReceitas(), "Receitas")
-        self.tab_view.addTab(TelaDespesas(), "Despesas")
+        self.tab_view.addTab(TelaDespesas(self.di_container), "Despesas")
         self.tab_view.addTab(AbaLimites(), "Limites")
 
         receitas_exemplo = {i: 5000 for i in range(1, 13)}

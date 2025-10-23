@@ -8,21 +8,17 @@ from matplotlib.figure import Figure
 from datetime import datetime
 import sys
 
+from models.despesa import Despesa
+
 class TelaDespesas(QWidget):
-    def __init__(self):
+    def __init__(self, di_container):
         super().__init__()
+        self.di_container = di_container
         self.setWindowTitle("Extrato de Despesas")
         self.resize(1000, 600)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        # Dados de exemplo
-        self.despesas = [
-            {"data": "05/10/2025", "descricao": "Supermercado", "tipo": "Pix", "categoria": "Alimentação", "valor": 120.50},
-            {"data": "06/10/2025", "descricao": "Gasolina", "tipo": "Crédito", "categoria": "Transporte", "valor": 80.00},
-            {"data": "07/10/2025", "descricao": "Cinema", "tipo": "Débito", "categoria": "Lazer", "valor": 45.00},
-            {"data": "08/10/2025", "descricao": "Conta de Luz", "tipo": "Pix", "categoria": "Moradia", "valor": 230.00},
-            {"data": "08/10/2025", "descricao": "Lanche", "tipo": "Dinheiro", "categoria": "Alimentação", "valor": 25.00},
-        ]
+        self.despesas = self.di_container.transacao_repository.get_all()
 
         main_layout = QVBoxLayout(self)
 
@@ -96,18 +92,20 @@ class TelaDespesas(QWidget):
         for d in lista:
             row = self.tabela.rowCount()
             self.tabela.insertRow(row)
-            self.tabela.setItem(row, 0, QTableWidgetItem(d["data"]))
-            self.tabela.setItem(row, 1, QTableWidgetItem(d["descricao"]))
-            self.tabela.setItem(row, 2, QTableWidgetItem(d["tipo"]))
-            self.tabela.setItem(row, 3, QTableWidgetItem(d["categoria"]))
-            self.tabela.setItem(row, 4, QTableWidgetItem(f"R$ {d['valor']:.2f}"))
-            total += d["valor"]
+            self.tabela.setItem(row, 0, QTableWidgetItem(d.data))
+            self.tabela.setItem(row, 1, QTableWidgetItem(d.descricao))
+            self.tabela.setItem(row, 2, QTableWidgetItem(d.metodo_pagamento))
+            self.tabela.setItem(row, 3, QTableWidgetItem(d.categoria))
+            self.tabela.setItem(row, 4, QTableWidgetItem(f"R$ {d.valor:.2f}"))
+            total += d.valor
         self.label_total.setText(f"Total de Despesas: R$ {total:.2f}")
 
+
+    # TODO: Nao esta funcionando
     def filtrar_despesas(self):
         data_ini = self.data_ini.text().strip()
         data_fim = self.data_fim.text().strip()
-        tipo = self.tipo_combo.currentText()
+        tipo = self.metodo_pagamento_combo.currentText()
         categoria = self.categoria_combo.currentText()
 
         def str_para_data(s):
@@ -121,20 +119,21 @@ class TelaDespesas(QWidget):
 
         filtradas = []
         for d in self.despesas:
-            data_desp = str_para_data(d["data"])
+            data_desp = str_para_data(d.data)
             if (not ini or data_desp >= ini) and (not fim or data_desp <= fim):
-                if (tipo == "Todos" or d["tipo"] == tipo) and (categoria == "Todos" or d["categoria"] == categoria):
+                if (tipo == "Todos" or d.metodo_pagamento == tipo) and (categoria == "Todos" or d.categoria == categoria):
                     filtradas.append(d)
         self.carregar_despesas(filtradas)
         self.atualizar_graficos(filtradas)
 
+
+    # TODO: Nao esta funcionando
     def atualizar_graficos(self, lista=None):
         if lista is None:
             lista = self.despesas
 
-        # --- Gráfico por Tipo ---
         tipos = ["Pix", "Crédito", "Débito", "Dinheiro"]
-        valores_tipo = [sum(d["valor"] for d in lista if d["tipo"]==t) for t in tipos]
+        valores_tipo = [sum(d.valor for d in lista if d.metodo_pagamento==t) for t in tipos]
 
         tipos_filtrados = [t for t, v in zip(tipos, valores_tipo) if v > 0]
         valores_filtrados = [v for v in valores_tipo if v > 0]
@@ -151,8 +150,8 @@ class TelaDespesas(QWidget):
         self.canvas_tipo.draw()
 
         # --- Gráfico por Categoria ---
-        categorias = list(set(d["categoria"] for d in lista))
-        valores_cat = [sum(d["valor"] for d in lista if d["categoria"]==c) for c in categorias]
+        categorias = list(set(d.categoria for d in lista))
+        valores_cat = [sum(d.valor for d in lista if d.categoria==c) for c in categorias]
 
         categorias_filtradas = [c for c, v in zip(categorias, valores_cat) if v > 0]
         valores_cat_filtrados = [v for v in valores_cat if v > 0]
@@ -195,16 +194,23 @@ class TelaDespesas(QWidget):
         def adicionar():
             try:
                 valor = float(input_valor.text().replace(",", "."))
-                nova = {
-                    "data": input_data.text(),
-                    "descricao": input_desc.text(),
-                    "tipo": input_tipo.currentText(),
-                    "categoria": input_categoria.currentText(),
-                    "valor": valor
-                }
-                self.despesas.append(nova)
-                self.carregar_despesas(self.despesas)
+
+                nova_despesa = Despesa(
+                    descricao=input_desc.text(),
+                    categoria=input_categoria.currentText(),
+                    metodo_pagamento=input_tipo.currentText(),
+                    valor=valor,
+                    tipo="despesa",
+                    usuario_id=self.di_container.usuario_ativo.id,
+                    data=input_data.text()
+                )
+
+                self.di_container.transacao_repository.add(nova_despesa)
+
+                despesas_db = self.di_container.transacao_repository.get_all()
+                self.carregar_despesas(despesas_db)
                 self.atualizar_graficos()
+
                 dialog.accept()
             except:
                 QMessageBox.warning(dialog, "Erro", "Valor inválido!")
