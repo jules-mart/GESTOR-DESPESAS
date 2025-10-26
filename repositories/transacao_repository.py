@@ -1,4 +1,6 @@
 from database.db_session import SessionLocal
+from models.despesa import Despesa
+from models.receita import Receita
 from models.transacao import Transacao
 
 class TransacaoRepository:
@@ -11,9 +13,21 @@ class TransacaoRepository:
         session.commit()
         session.close()
 
-    def get_all(self):
+    def get_transacoes_by_user(self, usuario_id):
         session = self._session_factory()
-        items = session.query(Transacao).all()
+        items = session.query(Transacao).filter(Transacao.usuario_id == usuario_id).all()
+        session.close()
+        return items
+    
+    def get_receitas_by_user(self, usuario_id):
+        session = self._session_factory()
+        items = session.query(Receita).filter(Receita.usuario_id == usuario_id).all()
+        session.close()
+        return items
+    
+    def get_despesas_by_user(self, usuario_id):
+        session = self._session_factory()
+        items = session.query(Despesa).filter(Despesa.usuario_id == usuario_id).all()
         session.close()
         return items
     

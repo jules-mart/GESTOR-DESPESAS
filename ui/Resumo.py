@@ -7,7 +7,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 class AbaResumo(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, di_container, parent=None):
         super().__init__(parent)
         self.setStyleSheet("background-color: transparent;")
 

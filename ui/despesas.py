@@ -18,7 +18,7 @@ class TelaDespesas(QWidget):
         self.resize(1000, 600)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        self.despesas = self.di_container.transacao_repository.get_all()
+        self.despesas = self.di_container.transacao_repository.get_despesas_by_user(self.di_container.usuario_ativo.id)
 
         main_layout = QVBoxLayout(self)
 
@@ -207,7 +207,7 @@ class TelaDespesas(QWidget):
 
                 self.di_container.transacao_repository.add(nova_despesa)
 
-                despesas_db = self.di_container.transacao_repository.get_all()
+                despesas_db = self.di_container.transacao_repository.get_despesas_by_user(self.di_container.usuario_ativo.id)
                 self.carregar_despesas(despesas_db)
                 self.atualizar_graficos()
 

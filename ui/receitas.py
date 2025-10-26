@@ -9,22 +9,18 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from datetime import datetime
 
+from models.receita import Receita
+
 
 class AbaReceitas(QWidget):
-    def __init__(self):
+    def __init__(self, di_container):
         super().__init__()
+        self.di_container = di_container
         self.setWindowTitle("Extrato de Receitas")
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
         # Dados de exemplo de RECEITAS
-        self.receitas = [
-            {"data": "01/10/2025", "descricao": "Salário",
-                "tipo": "Transferência", "categoria": "Salário", "valor": 5000.00},
-            {"data": "10/10/2025", "descricao": "Freela Website",
-                "tipo": "Pix", "categoria": "Trabalho Extra", "valor": 850.00},
-            {"data": "12/10/2025", "descricao": "Venda de item usado",
-                "tipo": "Dinheiro", "categoria": "Vendas", "valor": 120.00},
-        ]
+        self.receitas = self.di_container.transacao_repository.get_receitas_by_user(self.di_container.usuario_ativo.id)
 
         main_layout = QVBoxLayout(self)
 
@@ -102,13 +98,12 @@ class AbaReceitas(QWidget):
         for r in lista:
             row = self.tabela.rowCount()
             self.tabela.insertRow(row)
-            self.tabela.setItem(row, 0, QTableWidgetItem(r["data"]))
-            self.tabela.setItem(row, 1, QTableWidgetItem(r["descricao"]))
-            self.tabela.setItem(row, 2, QTableWidgetItem(r["tipo"]))
-            self.tabela.setItem(row, 3, QTableWidgetItem(r["categoria"]))
-            self.tabela.setItem(
-                row, 4, QTableWidgetItem(f"R$ {r['valor']:.2f}"))
-            total += r["valor"]
+            self.tabela.setItem(row, 0, QTableWidgetItem(r.data))
+            self.tabela.setItem(row, 1, QTableWidgetItem(r.descricao))
+            self.tabela.setItem(row, 2, QTableWidgetItem(r.metodo_pagamento))
+            self.tabela.setItem(row, 3, QTableWidgetItem(r.categoria))
+            self.tabela.setItem(row, 4, QTableWidgetItem(f"R$ {r.valor:.2f}"))
+            total += r.valor
         self.label_total.setText(f"Total de Receitas: R$ {total:.2f}")
 
     # --- AQUI ESTÁ A FUNÇÃO QUE FALTAVA ---
@@ -129,10 +124,10 @@ class AbaReceitas(QWidget):
 
         filtradas = []
         for r in self.receitas:
-            data_receita = str_para_data(r["data"])
+            data_receita = str_para_data(r.data)
             if data_receita:  # Só processa se a data for válida
                 if (not ini or data_receita >= ini) and (not fim or data_receita <= fim):
-                    if (tipo == "Todos" or r["tipo"] == tipo) and (categoria == "Todos" or r["categoria"] == categoria):
+                    if (tipo == "Todos" or r.metodo_pagamento == tipo) and (categoria == "Todos" or r.categoria == categoria):
                         filtradas.append(r)
 
         self.carregar_receitas(filtradas)
@@ -144,9 +139,9 @@ class AbaReceitas(QWidget):
             lista = self.receitas
 
         # --- Gráfico por Tipo ---
-        tipos = list(set(r["tipo"] for r in lista))
-        valores_tipo = [sum(r["valor"]
-                            for r in lista if r["tipo"] == t) for t in tipos]
+        tipos = list(set(r.metodo_pagamento for r in lista))
+        valores_tipo = [sum(r.valor
+                            for r in lista if r.metodo_pagamento == t) for t in tipos]
 
         self.fig_tipo.clear()
         ax1 = self.fig_tipo.add_subplot(111)
@@ -159,9 +154,9 @@ class AbaReceitas(QWidget):
         self.canvas_tipo.draw()
 
         # --- Gráfico por Categoria ---
-        categorias = list(set(r["categoria"] for r in lista))
+        categorias = list(set(r.categoria for r in lista))
         valores_cat = [
-            sum(r["valor"] for r in lista if r["categoria"] == c) for c in categorias]
+            sum(r.valor for r in lista if r.categoria == c) for c in categorias]
 
         self.fig_cat.clear()
         ax2 = self.fig_cat.add_subplot(111)
@@ -202,15 +197,21 @@ class AbaReceitas(QWidget):
         def adicionar():
             try:
                 valor = float(input_valor.text().replace(",", "."))
-                nova = {
-                    "data": input_data.text(),
-                    "descricao": input_desc.text(),
-                    "tipo": input_tipo.currentText(),
-                    "categoria": input_categoria.currentText(),
-                    "valor": valor
-                }
-                self.receitas.append(nova)
-                self.carregar_receitas(self.receitas)
+
+                nova_receita = Receita(
+                    descricao=input_desc.text(),
+                    categoria=input_categoria.currentText(),
+                    metodo_pagamento=input_tipo.currentText(),
+                    valor=valor,
+                    tipo="receita",
+                    usuario_id=self.di_container.usuario_ativo.id,
+                    data=input_data.text()
+                )
+
+                self.di_container.transacao_repository.add(nova_receita)
+
+                receitas_db = self.di_container.transacao_repository.get_receitas_by_user(self.di_container.usuario_ativo.id)
+                self.carregar_receitas(receitas_db)
                 self.atualizar_graficos()
                 dialog.accept()
             except:
