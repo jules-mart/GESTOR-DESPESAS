@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Date, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from database.db_session import Base
 from sqlalchemy.orm import DeclarativeMeta
@@ -15,8 +15,7 @@ class Transacao(Base, metaclass=BaseMeta):
     categoria = Column(String)
     descricao = Column(String(100))
     valor = Column(Float)
-    # TODO: change to datetime
-    data = Column(String)
+    data = Column(Date)
 
     usuario_id = Column(Integer, ForeignKey("TUSU.id"))
     usuario = relationship("Usuario", back_populates="transacoes")

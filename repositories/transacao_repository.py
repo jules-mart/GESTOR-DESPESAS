@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from sqlalchemy import extract
 from database.db_session import SessionLocal
 from models.despesa import Despesa
 from models.receita import Receita
@@ -30,6 +33,23 @@ class TransacaoRepository:
         items = session.query(Despesa).filter(Despesa.usuario_id == usuario_id).all()
         session.close()
         return items
+    
+
+    def get_current_month_transactions(self, usuario_id):
+        session = self._session_factory()
+        now = datetime.now()
+
+        transacoes = (
+            session.query(Transacao)
+            .filter(
+                Transacao.usuario_id == usuario_id,
+                extract('year', Transacao.data) == now.year,
+                extract('month', Transacao.data) == now.month
+            )
+            .all()
+        )
+        session.close()
+        return transacoes
     
     # TODO
     def get_balance(id):

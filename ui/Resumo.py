@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 from PySide6.QtCore import Qt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from models.despesa import Despesa
+from models.receita import Receita
 
 
 class AbaResumo(QWidget):
@@ -12,12 +14,19 @@ class AbaResumo(QWidget):
         self.setStyleSheet("background-color: transparent;")
 
         # Layout principal da aba
-        main_layout = QHBoxLayout(self)
+        main_layout = QHBoxLayout(self) 
 
         # --- DADOS DE EXEMPLO (substitua pela sua lógica real) ---
-        renda_mensal = 5000.00
-        despesas_totais = 3250.50
-        saldo_restante = renda_mensal - despesas_totais
+        transacoes = di_container.transacao_repository.get_current_month_transactions(di_container.usuario_ativo.id)
+        receitas = [t for t in transacoes if isinstance(t, Receita)]
+        despesas = [t for t in transacoes if isinstance(t, Despesa)]
+        total_receitas = sum(r.get_valor_com_sinal() for r in receitas)
+        total_despesas = sum(d.get_valor_com_sinal() for d in despesas)
+
+        saldo_restante = total_receitas + total_despesas
+
+        if saldo_restante < 0:
+            saldo_restante = 0
 
         # Frame para o Gráfico (Esquerda)
         chart_frame = QFrame()
@@ -30,14 +39,14 @@ class AbaResumo(QWidget):
         figura.patch.set_facecolor("#1e1e2f")  # Cor de fundo
         ax = figura.add_subplot(111)
 
-        valores = [despesas_totais, saldo_restante]
+        valores = [abs(total_despesas), saldo_restante]
         # Vermelho para despesa, verde para saldo
         cores = ['#e63946', '#2a9d8f']
 
         ax.pie(valores, labels=None, colors=cores, autopct=None, startangle=90,
                wedgeprops=dict(width=0.4, edgecolor='#1e1e2f'))
 
-        porcentagem_gasta = (despesas_totais / renda_mensal) * 100
+        porcentagem_gasta = (abs(total_despesas) / total_receitas) * 100
         ax.text(0, 0, f'{porcentagem_gasta:.1f}%\nGasto', ha='center', va='center',
                 fontsize=24, color='white', weight='bold')
 
@@ -57,12 +66,12 @@ class AbaResumo(QWidget):
             "font-size: 22px; font-weight: bold;")
         details_layout.addWidget(label_titulo_detalhes)
 
-        label_renda = QLabel(f"Renda Mensal: R$ {renda_mensal:,.2f}")
+        label_renda = QLabel(f"Total de Receitas: R$ {total_receitas:,.2f}")
         label_renda.setStyleSheet("font-size: 16px;")
         details_layout.addWidget(label_renda)
 
         label_despesas = QLabel(
-            f"Total de Despesas: R$ {despesas_totais:,.2f}")
+            f"Total de Despesas: R$ {abs(total_despesas):,.2f}")
         label_despesas.setStyleSheet("font-size: 16px;")
         details_layout.addWidget(label_despesas)
 

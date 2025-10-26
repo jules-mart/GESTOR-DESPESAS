@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit,
     QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView, QDialog, QFormLayout, QDialogButtonBox
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QDate
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from datetime import datetime
+from datetime import date, datetime
 import sys
 
 from models.despesa import Despesa
@@ -24,10 +24,20 @@ class TelaDespesas(QWidget):
 
         # Filtros
         filtro_layout = QHBoxLayout()
-        self.data_ini = QLineEdit()
-        self.data_ini.setPlaceholderText("Data inicial (dd/mm/aaaa)")
-        self.data_fim = QLineEdit()
-        self.data_fim.setPlaceholderText("Data final (dd/mm/aaaa)")
+
+        self.data_ini = QDateEdit()
+        self.data_ini.setCalendarPopup(True)
+        self.data_ini.setDisplayFormat("dd-MM-yyyy")
+        self.data_ini.setSpecialValueText("Data inicial")
+        self.data_ini.setDateRange(QDate(1900, 1, 1), QDate(2100, 12, 31))
+        self.data_ini.setDate(self.data_ini.minimumDate())
+
+        self.data_fim = QDateEdit()
+        self.data_fim.setCalendarPopup(True)
+        self.data_fim.setDisplayFormat("dd-MM-yyyy")
+        self.data_fim.setSpecialValueText("Data final (dd/mm/aaaa)")
+        self.data_fim.setDateRange(QDate(1900, 1, 1), QDate(2100, 12, 31))
+        self.data_fim.setDate(QDate.currentDate())
 
         self.tipo_combo = QComboBox()
         self.tipo_combo.addItems(["Todos", "Pix", "Crédito", "Débito", "Dinheiro"])
@@ -92,7 +102,7 @@ class TelaDespesas(QWidget):
         for d in lista:
             row = self.tabela.rowCount()
             self.tabela.insertRow(row)
-            self.tabela.setItem(row, 0, QTableWidgetItem(d.data))
+            self.tabela.setItem(row, 0, QTableWidgetItem(d.data.strftime("%d/%m/%Y")))
             self.tabela.setItem(row, 1, QTableWidgetItem(d.descricao))
             self.tabela.setItem(row, 2, QTableWidgetItem(d.metodo_pagamento))
             self.tabela.setItem(row, 3, QTableWidgetItem(d.categoria))
@@ -119,7 +129,7 @@ class TelaDespesas(QWidget):
 
         filtradas = []
         for d in self.despesas:
-            data_desp = str_para_data(d.data)
+            data_desp = str_para_data(d.data.strftime("%d/%m/%Y"))
             if (not ini or data_desp >= ini) and (not fim or data_desp <= fim):
                 if (tipo == "Todos" or d.metodo_pagamento == tipo) and (categoria == "Todos" or d.categoria == categoria):
                     filtradas.append(d)
@@ -173,8 +183,11 @@ class TelaDespesas(QWidget):
         dialog.setStyleSheet("background-color: #1e1e2f; color: white;")
         layout = QFormLayout(dialog)
 
-        input_data = QLineEdit()
-        input_data.setPlaceholderText("dd/mm/aaaa")
+
+        input_data = QDateEdit()
+        input_data.setCalendarPopup(True)
+        input_data.setDisplayFormat("dd-MM-yyyy")
+        input_data.setDate(QDate.currentDate())
         input_desc = QLineEdit()
         input_tipo = QComboBox()
         input_tipo.addItems(["Pix", "Crédito", "Débito", "Dinheiro"])
@@ -192,28 +205,52 @@ class TelaDespesas(QWidget):
         layout.addWidget(buttons)
 
         def adicionar():
+            # Validate description
+            if not input_desc.text().strip():
+                QMessageBox.warning(dialog, "Erro", "O campo descrição não pode estar vazio.")
+                return
+
+            # Validate value
             try:
                 valor = float(input_valor.text().replace(",", "."))
+                if valor <= 0:
+                    raise ValueError
+            except ValueError:
+                QMessageBox.warning(dialog, "Erro", "Insira um valor numérico positivo.")
+                return
 
+            # Validate date
+            qdate = input_data.date() 
+            if not qdate.isValid():
+                QMessageBox.warning(dialog, "Erro", "Data inválida.")
+                return
+            
+            python_date = date(qdate.year(), qdate.month(), qdate.day())
+
+            # If all validations pass:
+            try:
                 nova_despesa = Despesa(
-                    descricao=input_desc.text(),
+                    descricao=input_desc.text().strip(),
                     categoria=input_categoria.currentText(),
                     metodo_pagamento=input_tipo.currentText(),
                     valor=valor,
                     tipo="despesa",
                     usuario_id=self.di_container.usuario_ativo.id,
-                    data=input_data.text()
+                    data=python_date
                 )
 
                 self.di_container.transacao_repository.add(nova_despesa)
 
-                despesas_db = self.di_container.transacao_repository.get_despesas_by_user(self.di_container.usuario_ativo.id)
+                despesas_db = self.di_container.transacao_repository.get_despesas_by_user(
+                    self.di_container.usuario_ativo.id
+                )
                 self.carregar_despesas(despesas_db)
                 self.atualizar_graficos()
 
                 dialog.accept()
-            except:
-                QMessageBox.warning(dialog, "Erro", "Valor inválido!")
+
+            except Exception as e:
+                QMessageBox.warning(dialog, "Erro", f"Erro ao salvar no banco de dados: {e}")
 
         buttons.accepted.connect(adicionar)
         buttons.rejected.connect(dialog.reject)
