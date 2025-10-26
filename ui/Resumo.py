@@ -14,9 +14,10 @@ class AbaResumo(QWidget):
         self.setStyleSheet("background-color: transparent;")
 
         # Layout principal da aba
-        main_layout = QHBoxLayout(self) 
+        main_layout = QHBoxLayout(self)
 
-        transacoes = di_container.transacao_repository.get_current_month_transactions(di_container.usuario_ativo.id)
+        transacoes = di_container.transacao_repository.get_current_month_transactions(
+            di_container.usuario_ativo.id)
         receitas = [t for t in transacoes if isinstance(t, Receita)]
         despesas = [t for t in transacoes if isinstance(t, Despesa)]
         total_receitas = sum(r.get_valor_com_sinal() for r in receitas)
@@ -45,7 +46,7 @@ class AbaResumo(QWidget):
             cores = ['#e63946', '#2a9d8f']
 
             ax.pie(valores, labels=None, colors=cores, autopct=None, startangle=90,
-                wedgeprops=dict(width=0.4, edgecolor='#1e1e2f'))
+                   wedgeprops=dict(width=0.4, edgecolor='#1e1e2f'))
 
             porcentagem_gasta = (abs(total_despesas) / total_receitas) * 100
             ax.text(0, 0, f'{porcentagem_gasta:.1f}%\nGasto', ha='center', va='center',
@@ -53,6 +54,21 @@ class AbaResumo(QWidget):
 
             canvas = FigureCanvas(figura)
             chart_layout.addWidget(canvas)
+
+        else:
+            # Se não houver transações, mostra uma mensagem
+            placeholder_frame = QFrame()
+            placeholder_layout = QVBoxLayout(placeholder_frame)
+            placeholder_layout.setAlignment(Qt.AlignCenter)
+
+            label_placeholder = QLabel(
+                "Sem transações este mês. 💸\n\nAdicione receitas ou despesas para ver o resumo.")
+            label_placeholder.setAlignment(Qt.AlignCenter)
+            label_placeholder.setStyleSheet("font-size: 16px; color: #a5a5a5;")
+
+            placeholder_layout.addWidget(label_placeholder)
+            # Adiciona no lugar do gráfico
+            main_layout.addWidget(placeholder_frame, 1)
 
         # --- Frame para os Detalhes em Texto (Direita) ---
         details_frame = QFrame()
