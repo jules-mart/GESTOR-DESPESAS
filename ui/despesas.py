@@ -48,9 +48,16 @@ class TelaDespesas(QWidget):
         self.btn_filtrar = QPushButton("Filtrar")
         self.btn_filtrar.clicked.connect(self.filtrar_despesas)
 
-        self.btn_adicionar = QPushButton("+")
-        self.btn_adicionar.setFixedWidth(40)
+        self.btn_adicionar = QPushButton("＋ Adicionar Despesa")
+        self.btn_adicionar.setStyleSheet("""
+            QPushButton {
+                background-color: #3b82f6; color: white; font-weight: bold;
+                font-size: 14px; padding: 8px 16px; border-radius: 8px;
+            }
+            QPushButton:hover { background-color: #2563eb; }
+        """)
         self.btn_adicionar.clicked.connect(self.abrir_adicionar_despesa)
+        filtro_layout.addWidget(self.btn_adicionar)
 
         for widget in [self.data_ini, self.data_fim, self.tipo_combo, self.categoria_combo, self.btn_filtrar, self.btn_adicionar]:
             filtro_layout.addWidget(widget)
@@ -111,31 +118,25 @@ class TelaDespesas(QWidget):
         self.label_total.setText(f"Total de Despesas: R$ {total:.2f}")
 
 
-    # TODO: Nao esta funcionando
     def filtrar_despesas(self):
-        data_ini = self.data_ini.text().strip()
-        data_fim = self.data_fim.text().strip()
-        tipo = self.metodo_pagamento_combo.currentText()
+    # Pega as datas corretamente do QDateEdit
+        ini_qdate = self.data_ini.date()
+        fim_qdate = self.data_fim.date()
+        ini = datetime(ini_qdate.year(), ini_qdate.month(), ini_qdate.day())
+        fim = datetime(fim_qdate.year(), fim_qdate.month(), fim_qdate.day())
+
+        tipo = self.tipo_combo.currentText()
         categoria = self.categoria_combo.currentText()
-
-        def str_para_data(s):
-            try:
-                return datetime.strptime(s, "%d/%m/%Y")
-            except:
-                return None
-
-        ini = str_para_data(data_ini)
-        fim = str_para_data(data_fim)
 
         filtradas = []
         for d in self.despesas:
-            data_desp = str_para_data(d.data.strftime("%d/%m/%Y"))
-            if (not ini or data_desp >= ini) and (not fim or data_desp <= fim):
+            data_desp = datetime(d.data.year, d.data.month, d.data.day) if isinstance(d.data, date) else d.data
+            if ini <= data_desp <= fim:
                 if (tipo == "Todos" or d.metodo_pagamento == tipo) and (categoria == "Todos" or d.categoria == categoria):
                     filtradas.append(d)
+
         self.carregar_despesas(filtradas)
         self.atualizar_graficos(filtradas)
-
 
     # TODO: Nao esta funcionando
     def atualizar_graficos(self, lista=None):

@@ -1,9 +1,8 @@
-# ui/Cadastro.py (CORRIGIDO)
-
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QScrollArea
 )
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression
 
 
 class TelaCadastro(QWidget):
@@ -12,33 +11,24 @@ class TelaCadastro(QWidget):
         self.usuario_repository = usuario_repository
         self.setWindowTitle("Cadastro de Usuário")
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
-        # Aumentei o tamanho mínimo para garantir que tudo caiba confortavelmente
         self.setMinimumSize(500, 650)
 
-        # --- CORREÇÃO: Layout principal para a própria janela ---
         main_layout = QVBoxLayout(self)
-        # Remove margens extras da janela
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Área de scroll para conter o formulário
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        # Remove a borda padrão da QScrollArea para melhor estética
         scroll.setStyleSheet("QScrollArea { border: none; }")
-        # Adiciona a scroll area ao layout principal
         main_layout.addWidget(scroll)
 
-        # Container para os widgets dentro da área de scroll
         container = QWidget()
         scroll.setWidget(container)
 
-        # Layout para o conteúdo do formulário
         layout_formulario = QVBoxLayout(container)
         layout_formulario.setAlignment(Qt.AlignTop)
         layout_formulario.setContentsMargins(30, 30, 30, 30)
         layout_formulario.setSpacing(10)
 
-        # Título
         titulo = QLabel("🧾 Cadastro de Usuário")
         titulo.setAlignment(Qt.AlignCenter)
         titulo.setStyleSheet("font-size: 22px; font-weight: bold;")
@@ -55,26 +45,34 @@ class TelaCadastro(QWidget):
         self.entry_nome.setPlaceholderText("Nome completo")
         self._estilo_campo(self.entry_nome)
         layout_formulario.addWidget(self.entry_nome)
+        regex_nome = QRegularExpression(r"^[A-Za-zÀ-ÿ ]+$")
+        self.entry_nome.setValidator(QRegularExpressionValidator(regex_nome))
 
         self.entry_data_nasc = QLineEdit()
-        self.entry_data_nasc.setPlaceholderText(
-            "Data de nascimento (DD/MM/AAAA)")
+        self.entry_data_nasc.setPlaceholderText("Data de nascimento (DD/MM/AAAA)")
         self._estilo_campo(self.entry_data_nasc)
+        self.entry_data_nasc.setInputMask("00/00/0000")
         layout_formulario.addWidget(self.entry_data_nasc)
 
         self.entry_cpf = QLineEdit()
         self.entry_cpf.setPlaceholderText("CPF (somente números)")
         self._estilo_campo(self.entry_cpf)
+        self.entry_cpf.setInputMask("00000000000")
         layout_formulario.addWidget(self.entry_cpf)
 
         self.entry_profissao = QLineEdit()
         self.entry_profissao.setPlaceholderText("Profissão")
         self._estilo_campo(self.entry_profissao)
+        regex_prof = QRegularExpression(r"^[A-Za-zÀ-ÿ ]+$")
+        self.entry_profissao.setValidator(QRegularExpressionValidator(regex_prof))
         layout_formulario.addWidget(self.entry_profissao)
 
         self.entry_renda = QLineEdit()
         self.entry_renda.setPlaceholderText("Renda mensal (R$)")
         self._estilo_campo(self.entry_renda)
+        validador_renda = QDoubleValidator(0.0, 9999999.99, 2)
+        validador_renda.setNotation(QDoubleValidator.StandardNotation)
+        self.entry_renda.setValidator(validador_renda)
         layout_formulario.addWidget(self.entry_renda)
 
         # Dados de Acesso

@@ -4,10 +4,11 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit,
     QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView, QDialog, QFormLayout, QDialogButtonBox
 )
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, QRegularExpression
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from datetime import date, datetime
+from PySide6.QtGui import QRegularExpressionValidator
 
 from models.receita import Receita
 
@@ -51,9 +52,16 @@ class AbaReceitas(QWidget):
         self.btn_filtrar.clicked.connect(
             self.filtrar_receitas)  # Esta linha agora funciona
 
-        self.btn_adicionar = QPushButton("+")
-        self.btn_adicionar.setFixedWidth(40)
+        self.btn_adicionar = QPushButton("＋ Adicionar Receita")
+        self.btn_adicionar.setStyleSheet("""
+            QPushButton {
+                background-color: #3b82f6; color: white; font-weight: bold;
+                font-size: 14px; padding: 8px 16px; border-radius: 8px;
+            }
+            QPushButton:hover { background-color: #2563eb; }
+        """)
         self.btn_adicionar.clicked.connect(self.abrir_adicionar_receita)
+        filtro_layout.addWidget(self.btn_adicionar)
 
         for widget in [self.data_ini, self.data_fim, self.tipo_combo, self.categoria_combo, self.btn_filtrar, self.btn_adicionar]:
             filtro_layout.addWidget(widget)
@@ -115,35 +123,28 @@ class AbaReceitas(QWidget):
             total += r.valor
         self.label_total.setText(f"Total de Receitas: R$ {total:.2f}")
 
-    # --- AQUI ESTÁ A FUNÇÃO QUE FALTAVA ---
-    #TODO: NAO ESTA FUNCIONANDO
     def filtrar_receitas(self):
-        data_ini = self.data_ini.text().strip()
-        data_fim = self.data_fim.text().strip()
+    # Datas do filtro
+        ini_qdate = self.data_ini.date()
+        fim_qdate = self.data_fim.date()
+        ini = date(ini_qdate.year(), ini_qdate.month(), ini_qdate.day())
+        fim = date(fim_qdate.year(), fim_qdate.month(), fim_qdate.day())
+
         tipo = self.tipo_combo.currentText()
         categoria = self.categoria_combo.currentText()
 
-        def str_para_data(s):
-            try:
-                return datetime.strptime(s, "%d/%m/%Y")
-            except (ValueError, TypeError):
-                return None
-
-        ini = str_para_data(data_ini)
-        fim = str_para_data(data_fim)
-
         filtradas = []
         for r in self.receitas:
-            data_receita = str_para_data(r.data)
-            if data_receita:  # Só processa se a data for válida
-                if (not ini or data_receita >= ini) and (not fim or data_receita <= fim):
-                    if (tipo == "Todos" or r.metodo_pagamento == tipo) and (categoria == "Todos" or r.categoria == categoria):
-                        filtradas.append(r)
+            # r.data já é um date
+            if (not ini or r.data >= ini) and (not fim or r.data <= fim):
+                if (tipo == "Todos" or r.metodo_pagamento == tipo) and \
+                (categoria == "Todos" or r.categoria == categoria):
+                    filtradas.append(r)
 
         self.carregar_receitas(filtradas)
         self.atualizar_graficos(filtradas)
     # ----------------------------------------
-
+    # TODO: Nao esta funcionando
     def atualizar_graficos(self, lista=None):
         if lista is None:
             lista = self.receitas
