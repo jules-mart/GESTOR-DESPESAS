@@ -16,7 +16,6 @@ class AbaResumo(QWidget):
         # Layout principal da aba
         main_layout = QHBoxLayout(self) 
 
-        # --- DADOS DE EXEMPLO (substitua pela sua lógica real) ---
         transacoes = di_container.transacao_repository.get_current_month_transactions(di_container.usuario_ativo.id)
         receitas = [t for t in transacoes if isinstance(t, Receita)]
         despesas = [t for t in transacoes if isinstance(t, Despesa)]
@@ -29,29 +28,31 @@ class AbaResumo(QWidget):
             saldo_restante = 0
 
         # Frame para o Gráfico (Esquerda)
-        chart_frame = QFrame()
-        chart_layout = QVBoxLayout(chart_frame)
-        # O '1' faz com que ocupe metade do espaço
-        main_layout.addWidget(chart_frame, 1)
+        # TODO: Fazer algo quando a tela não tiver receitas nem despesas.
+        if total_despesas > 0 or total_receitas > 0:
+            chart_frame = QFrame()
+            chart_layout = QVBoxLayout(chart_frame)
+            # O '1' faz com que ocupe metade do espaço
+            main_layout.addWidget(chart_frame, 1)
 
-        # --- Criação do Gráfico Circular (Donut Chart) ---
-        figura = Figure(figsize=(4, 4), dpi=100)
-        figura.patch.set_facecolor("#1e1e2f")  # Cor de fundo
-        ax = figura.add_subplot(111)
+            # --- Criação do Gráfico Circular (Donut Chart) ---
+            figura = Figure(figsize=(4, 4), dpi=100)
+            figura.patch.set_facecolor("#1e1e2f")  # Cor de fundo
+            ax = figura.add_subplot(111)
 
-        valores = [abs(total_despesas), saldo_restante]
-        # Vermelho para despesa, verde para saldo
-        cores = ['#e63946', '#2a9d8f']
+            valores = [abs(total_despesas), saldo_restante]
+            # Vermelho para despesa, verde para saldo
+            cores = ['#e63946', '#2a9d8f']
 
-        ax.pie(valores, labels=None, colors=cores, autopct=None, startangle=90,
-               wedgeprops=dict(width=0.4, edgecolor='#1e1e2f'))
+            ax.pie(valores, labels=None, colors=cores, autopct=None, startangle=90,
+                wedgeprops=dict(width=0.4, edgecolor='#1e1e2f'))
 
-        porcentagem_gasta = (abs(total_despesas) / total_receitas) * 100
-        ax.text(0, 0, f'{porcentagem_gasta:.1f}%\nGasto', ha='center', va='center',
-                fontsize=24, color='white', weight='bold')
+            porcentagem_gasta = (abs(total_despesas) / total_receitas) * 100
+            ax.text(0, 0, f'{porcentagem_gasta:.1f}%\nGasto', ha='center', va='center',
+                    fontsize=24, color='white', weight='bold')
 
-        canvas = FigureCanvas(figura)
-        chart_layout.addWidget(canvas)
+            canvas = FigureCanvas(figura)
+            chart_layout.addWidget(canvas)
 
         # --- Frame para os Detalhes em Texto (Direita) ---
         details_frame = QFrame()
