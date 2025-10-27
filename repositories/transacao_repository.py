@@ -8,35 +8,35 @@ from models.transacao import Transacao
 
 class TransacaoRepository:
     def __init__(self, session_factory=SessionLocal):
-        self._session_factory = session_factory
+        self.__session_factory = session_factory
 
     def add(self, transacao: Transacao):
-        session = self._session_factory()
+        session = self.__session_factory()
         session.add(transacao)
         session.commit()
         session.close()
 
     def get_transacoes_by_user(self, usuario_id):
-        session = self._session_factory()
+        session = self.__session_factory()
         items = session.query(Transacao).filter(Transacao.usuario_id == usuario_id).all()
         session.close()
         return items
     
     def get_receitas_by_user(self, usuario_id):
-        session = self._session_factory()
+        session = self.__session_factory()
         items = session.query(Receita).filter(Receita.usuario_id == usuario_id).all()
         session.close()
         return items
     
     def get_despesas_by_user(self, usuario_id):
-        session = self._session_factory()
+        session = self.__session_factory()
         items = session.query(Despesa).filter(Despesa.usuario_id == usuario_id).all()
         session.close()
         return items
     
 
     def get_current_month_transactions(self, usuario_id):
-        session = self._session_factory()
+        session = self.__session_factory()
         now = datetime.now()
 
         transacoes = (
