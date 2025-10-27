@@ -41,12 +41,6 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.addTab(AbaReceitas(self.di_container), "Receitas")
         self.tab_view.addTab(TelaDespesas(self.di_container), "Despesas")
         self.tab_view.addTab(AbaLimites(), "Limites")
-
-        receitas_exemplo = {i: 5000 for i in range(1, 13)}
-        despesas_exemplo = {i: 3000 for i in range(1, 13)}
-        self.tab_view.addTab(
-            AbaMeta(receitas=receitas_exemplo, despesas=despesas_exemplo), "Metas")
-
         aba_usuario = AbaUsuario(self.di_container)
         aba_usuario.logout_solicitado.connect(self.realizar_logout)
         self.tab_view.addTab(aba_usuario, "Usuário")
