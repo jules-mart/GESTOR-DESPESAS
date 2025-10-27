@@ -6,16 +6,16 @@ from sqlalchemy.exc import IntegrityError
 
 class UsuarioRepository:
     def __init__(self, session_factory=SessionLocal):
-        self._session_factory = session_factory
+        self.__session_factory = session_factory
 
     def add(self, user: Usuario):
-        session = self._session_factory()
+        session = self.__session_factory()
         session.add(user)
         session.commit()
         session.close()
     
     def verificar_credenciais(self, usuario: str, senha: str):
-        session = self._session_factory()
+        session = self.__session_factory()
         user = session.query(Usuario).filter(Usuario.user == usuario).first()
         if user and verify_password(senha, user.senha):
             return user
@@ -40,7 +40,7 @@ class UsuarioRepository:
             return False
         
     def atualizar_usuario(self, user_id, **dados):
-        session = self._session_factory()
+        session = self.__session_factory()
         user = session.query(Usuario).filter(Usuario.id == user_id).first()
 
         if not user:
