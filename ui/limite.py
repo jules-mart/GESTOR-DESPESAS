@@ -21,7 +21,6 @@ class AbaLimites(QWidget):
         self.limite_repository = di_container.limite_repository
         self.transacao_repository = di_container.transacao_repository
         
-        # Initialize empty data structures
         self.gastos_atuais = {}  
         self.limites = {}
 
@@ -58,11 +57,9 @@ class AbaLimites(QWidget):
         self.limites_layout = QVBoxLayout(container)
         self.limites_layout.setAlignment(Qt.AlignTop)
 
-        # Load data from database
         self.carregar_limites_do_banco()
 
     def carregar_limites_do_banco(self):
-        """Load limits from database and update the display"""
         if self.usuario_id:
             limites_db = self.limite_repository.get_by_usuario_id(self.usuario_id)
             
@@ -75,14 +72,12 @@ class AbaLimites(QWidget):
             self.atualizar_lista_limites()
 
     def carregar_gastos_atuais(self):
-        """Load current expenses for each category"""
 
         try:
             despesas_mes_atual = self.transacao_repository.get_current_month_despesas(self.usuario_id)
             
             self.gastos_atuais = {categoria: 0 for categoria in self.limites.keys()}
             
-            # Sum expenses by category
             for despesa in despesas_mes_atual:
                 categoria = despesa.categoria 
                 if categoria in self.gastos_atuais:
@@ -96,7 +91,6 @@ class AbaLimites(QWidget):
 
     
     def atualizar_lista_limites(self):
-        """Update the limits list display"""
         while self.limites_layout.count():
             child = self.limites_layout.takeAt(0)
             if child.widget():
@@ -116,7 +110,6 @@ class AbaLimites(QWidget):
         form_layout = QFormLayout(dialog)
 
         combo_categoria = QComboBox()
-        # Get available categories (you need to define this based on your categories)
         categorias_disponiveis = self.obter_categorias_disponiveis()
         combo_categoria.addItems(categorias_disponiveis)
         form_layout.addRow("Categoria:", combo_categoria)
@@ -136,29 +129,22 @@ class AbaLimites(QWidget):
             try:
                 valor = float(input_valor.text().replace(",", "."))
                 self.adicionar_limite_banco(categoria, valor)
-                self.carregar_limites_do_banco()  # Reload from database
+                self.carregar_limites_do_banco()
             except ValueError:
                 self.mostrar_erro("Valor inválido. Por favor, insira um número válido.")
 
     def obter_categorias_disponiveis(self):
-        """Get available categories that don't have limits yet"""
-        # TODO: Implement this based on your categories system
-        # This should return all possible expense categories that don't have limits set
         todas_categorias = ["Alimentação", "Transporte", "Lazer", "Moradia"]
         categorias_com_limite = self.limites.keys()
         return [cat for cat in todas_categorias if cat not in categorias_com_limite]
 
     def adicionar_limite_banco(self, categoria: str, valor: float):
-        """Add a new limit to the database"""
         if self.usuario_id:
-            # Check if limit already exists for this category
             limite_existente = self.limite_repository.get_by_categoria(categoria, self.usuario_id)
             
             if limite_existente:
-                # Update existing limit
                 self.limite_repository.update(limite_existente.id, valor)
             else:
-                # Create new limit
                 novo_limite = Limite(
                     categoria_limite=categoria,
                     valor_limite=valor,
@@ -167,17 +153,12 @@ class AbaLimites(QWidget):
                 self.limite_repository.add(novo_limite)
 
     def mostrar_erro(self, mensagem: str):
-        """Show error message"""
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Critical)
         msg.setText(mensagem)
         msg.setWindowTitle("Erro")
         msg.exec()
 
-    def set_usuario_id(self, usuario_id: int):
-        """Set user ID and reload data"""
-        self.usuario_id = usuario_id
-        self.carregar_limites_do_banco()
 # --- Widget customizado com o Gráfico Circular ---
 
 
@@ -284,9 +265,9 @@ class LimiteWidget(QFrame):
         main_layout.addWidget(buttons_container)
 
     def editar_limite(self):
-        # Implement edit functionality
+        # TODO
         pass
 
     def excluir_limite(self):
-        # Implement delete functionality
+        # TODO
         pass
