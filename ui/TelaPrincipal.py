@@ -55,5 +55,6 @@ class TelaPrincipal(QMainWindow):
 
     # --- 3. ESTA FUNÇÃO USA O "RÁDIO" PARA AVISAR O main.py ---
     def realizar_logout(self):
+        self.di_container.usuario_ativo = None
         self.logout_efetuado.emit()
         self.close()
