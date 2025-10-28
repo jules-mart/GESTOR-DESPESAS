@@ -40,7 +40,7 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.addTab(AbaResumo(self.di_container), "Resumo")
         self.tab_view.addTab(AbaReceitas(self.di_container), "Receitas")
         self.tab_view.addTab(TelaDespesas(self.di_container), "Despesas")
-        self.tab_view.addTab(AbaLimites(), "Limites")
+        self.tab_view.addTab(AbaLimites(self.di_container), "Limites")
 
         receitas_exemplo = {i: 5000 for i in range(1, 13)}
         despesas_exemplo = {i: 3000 for i in range(1, 13)}

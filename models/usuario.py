@@ -16,3 +16,4 @@ class Usuario(Base):
     senha = Column(String, nullable=False)
 
     transacoes = relationship("Transacao", back_populates="usuario")
+    limites = relationship("Limite", back_populates="usuario")

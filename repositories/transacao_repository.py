@@ -51,6 +51,23 @@ class TransacaoRepository:
         session.close()
         return transacoes
     
+    def get_current_month_despesas(self, usuario_id):
+        session = self.__session_factory()
+        now = datetime.now()
+
+        despesas = (
+            session.query(Despesa)
+            .filter(
+                Transacao.usuario_id == usuario_id,
+                extract('year', Despesa.data) == now.year,
+                extract('month', Despesa.data) == now.month
+            )
+            .all()
+        )
+        session.close()
+        return despesas
+    
+
     # TODO
     def get_balance(id):
         pass

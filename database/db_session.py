@@ -17,5 +17,5 @@ def init_db():
     from models.transacao import Transacao
     from models.despesa import Despesa
     from models.receita import Receita
-    #from models.metodo_pagamento import MetodoDePagamento
+    from models.limite import Limite
     Base.metadata.create_all(bind=engine)
