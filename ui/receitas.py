@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView, QDialog, QFormLayout, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, QDate, QRegularExpression
+from database.di_container import DIContainer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from datetime import date, datetime
@@ -14,7 +15,7 @@ from models.receita import Receita
 
 
 class AbaReceitas(QWidget):
-    def __init__(self, di_container):
+    def __init__(self, di_container: DIContainer):
         super().__init__()
         self.di_container = di_container
         self.setWindowTitle("Extrato de Receitas")
@@ -106,7 +107,7 @@ class AbaReceitas(QWidget):
 
         # Carregar dados
         self.carregar_receitas(self.receitas)
-        self.atualizar_graficos()
+        self.atualizar_graficos(self.receitas)
 
     # ================= Funções =================
     def carregar_receitas(self, lista):
@@ -151,34 +152,64 @@ class AbaReceitas(QWidget):
 
         # --- Gráfico por Tipo ---
         tipos = list(set(r.metodo_pagamento for r in lista))
-        valores_tipo = [sum(r.valor
-                            for r in lista if r.metodo_pagamento == t) for t in tipos]
+        valores_tipo = [sum(r.valor for r in lista if r.metodo_pagamento == t) for t in tipos]
 
         self.fig_tipo.clear()
         ax1 = self.fig_tipo.add_subplot(111)
-        ax1.pie(
+        ax1.set_facecolor('#1e1e2f')
+        self.fig_tipo.patch.set_facecolor('#1e1e2f')
+        
+        colors_tipo = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FFA726', '#AB47BC']
+        
+        wedges1, texts1, autotexts1 = ax1.pie(
             valores_tipo,
             labels=tipos,
-            textprops={'color': 'white'},
-            autopct='%1.1f%%'
+            colors=colors_tipo[:len(tipos)],
+            textprops={'color': 'white', 'fontsize': 10},
+            autopct='%1.1f%%',
+            startangle=90,
+            wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
+        
+        # Style percentage texts
+        for autotext in autotexts1:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+            autotext.set_fontsize(9)
+        
         self.canvas_tipo.draw()
 
         # --- Gráfico por Categoria ---
         categorias = list(set(r.categoria for r in lista))
-        valores_cat = [
-            sum(r.valor for r in lista if r.categoria == c) for c in categorias]
+        valores_cat = [sum(r.valor for r in lista if r.categoria == c) for c in categorias]
 
         self.fig_cat.clear()
         ax2 = self.fig_cat.add_subplot(111)
-        ax2.pie(
+        ax2.set_facecolor('#1e1e2f')
+        self.fig_cat.patch.set_facecolor('#1e1e2f')
+        
+        # Colors for categoria graph
+        colors_cat = ['#6A89CC', '#F8C471', '#82CCDD', '#B8E994', '#60A3BC', '#CAD3C8', '#E55039', '#78E08F']
+        
+        wedges2, texts2, autotexts2 = ax2.pie(
             valores_cat,
             labels=categorias,
-            textprops={'color': 'white'},
-            autopct='%1.1f%%'
+            colors=colors_cat[:len(categorias)],
+            textprops={'color': 'white', 'fontsize': 10},
+            autopct='%1.1f%%',
+            startangle=90,
+            wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
+        
+        # Style percentage texts
+        for autotext in autotexts2:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+            autotext.set_fontsize(9)
+        
         self.canvas_cat.draw()
 
+        
     # ================= Adicionar receita =================
     def abrir_adicionar_receita(self):
         dialog = QDialog(self)
@@ -209,12 +240,10 @@ class AbaReceitas(QWidget):
         layout.addWidget(buttons)
 
         def adicionar():
-             # Validate description
             if not input_desc.text().strip():
                 QMessageBox.warning(dialog, "Erro", "O campo descrição não pode estar vazio.")
                 return
 
-            # Validate value
             try:
                 valor = float(input_valor.text().replace(",", "."))
                 if valor <= 0:
@@ -223,7 +252,6 @@ class AbaReceitas(QWidget):
                 QMessageBox.warning(dialog, "Erro", "Insira um valor numérico positivo.")
                 return
 
-            # Validate date
             qdate = input_data.date() 
             if not qdate.isValid():
                 QMessageBox.warning(dialog, "Erro", "Data inválida.")
@@ -231,7 +259,6 @@ class AbaReceitas(QWidget):
             
             python_date = date(qdate.year(), qdate.month(), qdate.day())
 
-            # If all validations pass:
             try:
                 valor = float(input_valor.text().replace(",", "."))
 
@@ -249,7 +276,7 @@ class AbaReceitas(QWidget):
 
                 receitas_db = self.di_container.transacao_repository.get_receitas_by_user(self.di_container.usuario_ativo.id)
                 self.carregar_receitas(receitas_db)
-                self.atualizar_graficos()
+                self.atualizar_graficos(receitas_db)
                 dialog.accept()
             except Exception as e:
                 QMessageBox.warning(dialog, "Erro", f"Erro ao salvar no banco de dados: {e}")

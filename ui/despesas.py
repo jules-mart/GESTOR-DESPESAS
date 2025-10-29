@@ -100,7 +100,7 @@ class TelaDespesas(QWidget):
 
         # Carregar dados
         self.carregar_despesas(self.despesas)
-        self.atualizar_graficos()
+        self.atualizar_graficos(self.despesas)
 
     # ================= Funções =================
     def carregar_despesas(self, lista):
@@ -143,6 +143,7 @@ class TelaDespesas(QWidget):
         if lista is None:
             lista = self.despesas
 
+        # --- Gráfico por Tipo ---
         tipos = ["Pix", "Crédito", "Débito", "Dinheiro"]
         valores_tipo = [sum(d.valor for d in lista if d.metodo_pagamento==t) for t in tipos]
 
@@ -151,13 +152,29 @@ class TelaDespesas(QWidget):
 
         self.fig_tipo.clear()
         ax1 = self.fig_tipo.add_subplot(111)
-        ax1.pie(
+        ax1.set_facecolor('#1e1e2f')
+        self.fig_tipo.patch.set_facecolor('#1e1e2f')
+        
+        # Colors for tipo graph
+        colors_tipo = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FFA726', '#AB47BC']
+        
+
+        wedges1, texts1, autotexts1 = ax1.pie(
             valores_filtrados,
             labels=tipos_filtrados,
-            colors=["#e63946","#f4a261","#2a9d8f","#8d99ae"][:len(tipos_filtrados)],
-            textprops={'color':'white'},
-            autopct='%1.1f%%'
+            colors=colors_tipo[:len(tipos_filtrados)],
+            textprops={'color': 'white', 'fontsize': 10},
+            autopct='%1.1f%%',
+            startangle=90,
+            wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
+        
+        # Style percentage texts
+        for autotext in autotexts1:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+            autotext.set_fontsize(9)
+        
         self.canvas_tipo.draw()
 
         # --- Gráfico por Categoria ---
@@ -169,12 +186,27 @@ class TelaDespesas(QWidget):
 
         self.fig_cat.clear()
         ax2 = self.fig_cat.add_subplot(111)
-        ax2.pie(
+        ax2.set_facecolor('#1e1e2f')
+        self.fig_cat.patch.set_facecolor('#1e1e2f')
+        
+        colors_cat = ['#6A89CC', '#F8C471', '#82CCDD', '#B8E994', '#60A3BC', '#CAD3C8', '#E55039', '#78E08F']
+        
+        wedges2, texts2, autotexts2 = ax2.pie(
             valores_cat_filtrados,
             labels=categorias_filtradas,
-            textprops={'color':'white'},
-            autopct='%1.1f%%'
+            colors=colors_cat[:len(categorias_filtradas)],
+            textprops={'color': 'white', 'fontsize': 10},
+            autopct='%1.1f%%',
+            startangle=90,
+            wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
+        
+        # Style percentage texts
+        for autotext in autotexts2:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+            autotext.set_fontsize(9)
+            
         self.canvas_cat.draw()
 
     # ================= Adicionar despesa =================
@@ -246,7 +278,7 @@ class TelaDespesas(QWidget):
                     self.di_container.usuario_ativo.id
                 )
                 self.carregar_despesas(despesas_db)
-                self.atualizar_graficos()
+                self.atualizar_graficos(despesas_db)
 
                 dialog.accept()
 
