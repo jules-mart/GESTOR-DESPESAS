@@ -12,8 +12,10 @@ import sys
 from models.despesa import Despesa
 from models.lista_despesas import ListaDespesas
 
+
 class TelaDespesas(QWidget):
     despesa_adicionada = Signal()
+
     def __init__(self, di_container: DIContainer):
         super().__init__()
         self.di_container = di_container
@@ -90,13 +92,13 @@ class TelaDespesas(QWidget):
         self.graficos_layout.addWidget(self.label_total)
 
         # Gráfico Tipo
-        self.fig_tipo = Figure(figsize=(4,2.5))
+        self.fig_tipo = Figure(figsize=(4, 2.5))
         self.fig_tipo.patch.set_facecolor("#1e1e2f")
         self.canvas_tipo = FigureCanvas(self.fig_tipo)
         self.graficos_layout.addWidget(self.canvas_tipo)
 
         # Gráfico Categoria
-        self.fig_cat = Figure(figsize=(4,2.5))
+        self.fig_cat = Figure(figsize=(4, 2.5))
         self.fig_cat.patch.set_facecolor("#1e1e2f")
         self.canvas_cat = FigureCanvas(self.fig_cat)
         self.graficos_layout.addWidget(self.canvas_cat)
@@ -106,10 +108,13 @@ class TelaDespesas(QWidget):
         self.atualizar_graficos()
 
     # ================= Funções =================
-    def carregar_despesas(self, lista = None):
+    def carregar_despesas(self, lista=None):
         if lista is None:
             lista = self.despesas.lista_despesas
         self.tabela.setRowCount(0)
+        self.tabela.setColumnCount(7)
+        self.tabela.setHorizontalHeaderLabels(["Data", "Descrição", "Tipo", "Categoria", "Valor", "Editar", "Excluir"])
+        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         total = 0
         for d in lista:
             row = self.tabela.rowCount()
@@ -120,11 +125,99 @@ class TelaDespesas(QWidget):
             self.tabela.setItem(row, 3, QTableWidgetItem(d.categoria))
             self.tabela.setItem(row, 4, QTableWidgetItem(f"R$ {d.valor:.2f}"))
             total += d.valor
+
+            # Botão editar
+            btn_editar = QPushButton("✏️")
+            btn_editar.setStyleSheet("background-color: #3b82f6; color: white; border-radius: 4px; font-size: 11px; padding: 1px;")
+            btn_editar.setFixedSize(28, 22)
+            btn_editar.clicked.connect(lambda _, desp=d: self.editar_despesa(desp))
+            widget_editar = QWidget()
+            layout_editar = QHBoxLayout(widget_editar)
+            layout_editar.addWidget(btn_editar)
+            layout_editar.setAlignment(Qt.AlignCenter)
+            layout_editar.setContentsMargins(0, 0, 0, 0)
+            self.tabela.setCellWidget(row, 5, widget_editar)
+
+            # Botão excluir
+            btn_excluir = QPushButton("🗑️")
+            btn_excluir.setStyleSheet("background-color: #ef4444; color: white; border-radius: 4px; font-size: 11px; padding: 1px;")
+            btn_excluir.setFixedSize(28, 22)
+            btn_excluir.clicked.connect(lambda _, desp=d: self.excluir_despesa(desp))
+            widget_excluir = QWidget()
+            layout_excluir = QHBoxLayout(widget_excluir)
+            layout_excluir.addWidget(btn_excluir)
+            layout_excluir.setAlignment(Qt.AlignCenter)
+            layout_excluir.setContentsMargins(0, 0, 0, 0)
+            self.tabela.setCellWidget(row, 6, widget_excluir)
+
         self.label_total.setText(f"Total de Despesas: R$ {total:.2f}")
 
+    def editar_despesa(self, despesa):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Editar Despesa")
+        dialog.setStyleSheet("background-color: #1e1e2f; color: white;")
+        layout = QFormLayout(dialog)
+
+        input_data = QDateEdit()
+        input_data.setCalendarPopup(True)
+        input_data.setDisplayFormat("dd-MM-yyyy")
+        input_data.setDate(QDate(despesa.data.year, despesa.data.month, despesa.data.day))
+        input_desc = QLineEdit(despesa.descricao)
+        input_tipo = QComboBox()
+        input_tipo.addItems(["Pix", "Crédito", "Débito", "Dinheiro"])
+        input_tipo.setCurrentText(despesa.metodo_pagamento)
+        input_categoria = QComboBox()
+        input_categoria.addItems(["Alimentação", "Transporte", "Lazer", "Moradia"])
+        input_categoria.setCurrentText(despesa.categoria)
+        input_valor = QLineEdit(str(despesa.valor))
+
+        layout.addRow("Data:", input_data)
+        layout.addRow("Descrição:", input_desc)
+        layout.addRow("Tipo:", input_tipo)
+        layout.addRow("Categoria:", input_categoria)
+        layout.addRow("Valor:", input_valor)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(buttons)
+
+        def salvar_edicao():
+            try:
+                despesa.descricao = input_desc.text().strip()
+                despesa.metodo_pagamento = input_tipo.currentText()
+                despesa.categoria = input_categoria.currentText()
+                despesa.valor = float(input_valor.text().replace(",", "."))
+                qdate = input_data.date()
+                despesa.data = date(qdate.year(), qdate.month(), qdate.day())
+
+                self.di_container.transacao_repository.update(despesa)
+                self.despesas.atualizar_despesas()
+                self.carregar_despesas()
+                self.atualizar_graficos()
+                dialog.accept()
+            except Exception as e:
+                QMessageBox.warning(dialog, "Erro", f"Não foi possível salvar: {e}")
+
+        buttons.accepted.connect(salvar_edicao)
+        buttons.rejected.connect(dialog.reject)
+        dialog.exec()
+
+    def excluir_despesa(self, despesa):
+        resp = QMessageBox.question(
+            self,
+            "Excluir Despesa",
+            f"Tem certeza que deseja excluir '{despesa.descricao}'?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if resp == QMessageBox.Yes:
+            try:
+                self.di_container.transacao_repository.delete(despesa)
+                self.despesas.atualizar_despesas()
+                self.carregar_despesas()
+                self.atualizar_graficos()
+            except Exception as e:
+                QMessageBox.warning(self, "Erro", f"Não foi possível excluir: {e}")
 
     def filtrar_despesas(self):
-    # Pega as datas corretamente do QDateEdit
         ini_qdate = self.data_ini.date()
         fim_qdate = self.data_fim.date()
         ini = datetime(ini_qdate.year(), ini_qdate.month(), ini_qdate.day())
@@ -138,21 +231,19 @@ class TelaDespesas(QWidget):
         self.carregar_despesas(filtradas)
         self.atualizar_graficos(filtradas)
 
-    # TODO: Nao esta funcionando
-    def atualizar_graficos(self, lista = None):
-        # --- Gráfico por Tipo ---
+    def atualizar_graficos(self, lista=None):
         if lista is None:
             lista = self.despesas.lista_despesas
 
+        # --- Gráfico por Tipo ---
         tipos_filtrados, valores_filtrados = self.despesas.informacoes_grafico_tipo(lista)
 
         self.fig_tipo.clear()
         ax1 = self.fig_tipo.add_subplot(111)
         ax1.set_facecolor('#1e1e2f')
         self.fig_tipo.patch.set_facecolor('#1e1e2f')
-        
+
         colors_tipo = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FFA726', '#AB47BC']
-        
 
         wedges1, texts1, autotexts1 = ax1.pie(
             valores_filtrados,
@@ -163,12 +254,12 @@ class TelaDespesas(QWidget):
             startangle=90,
             wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
-        
+
         for autotext in autotexts1:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
             autotext.set_fontsize(9)
-        
+
         self.canvas_tipo.draw()
 
         # --- Gráfico por Categoria ---
@@ -178,9 +269,9 @@ class TelaDespesas(QWidget):
         ax2 = self.fig_cat.add_subplot(111)
         ax2.set_facecolor('#1e1e2f')
         self.fig_cat.patch.set_facecolor('#1e1e2f')
-        
+
         colors_cat = ['#6A89CC', '#F8C471', '#82CCDD', '#B8E994', '#60A3BC', '#CAD3C8', '#E55039', '#78E08F']
-        
+
         wedges2, texts2, autotexts2 = ax2.pie(
             valores_cat_filtrados,
             labels=categorias_filtradas,
@@ -190,21 +281,19 @@ class TelaDespesas(QWidget):
             startangle=90,
             wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
-        
+
         for autotext in autotexts2:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
             autotext.set_fontsize(9)
-            
+
         self.canvas_cat.draw()
 
-    # ================= Adicionar despesa =================
     def abrir_adicionar_despesa(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Adicionar Despesa")
         dialog.setStyleSheet("background-color: #1e1e2f; color: white;")
         layout = QFormLayout(dialog)
-
 
         input_data = QDateEdit()
         input_data.setCalendarPopup(True)
@@ -239,11 +328,11 @@ class TelaDespesas(QWidget):
                 QMessageBox.warning(dialog, "Erro", "Insira um valor numérico positivo.")
                 return
 
-            qdate = input_data.date() 
+            qdate = input_data.date()
             if not qdate.isValid():
                 QMessageBox.warning(dialog, "Erro", "Data inválida.")
                 return
-            
+
             python_date = date(qdate.year(), qdate.month(), qdate.day())
 
             try:
@@ -272,4 +361,3 @@ class TelaDespesas(QWidget):
         buttons.accepted.connect(adicionar)
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
-
