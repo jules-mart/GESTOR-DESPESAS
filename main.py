@@ -3,7 +3,6 @@ import sys
 from PySide6.QtWidgets import QApplication
 from database.db_session import init_db
 from database.di_container import DIContainer
-from ui.Login import TelaLogin
 from ui.main_window import AppController
 
 

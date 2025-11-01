@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox
 )
 from PySide6.QtCore import Qt, Signal  # Importa a classe Signal
-from ui.Cadastro import TelaCadastro
+from ui.cadastro import TelaCadastro
 
 
 class TelaLogin(QWidget):

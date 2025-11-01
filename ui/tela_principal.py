@@ -3,7 +3,7 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTabWidget, QLabel
 # <-- 1. VERIFIQUE SE 'Signal' ESTÁ A SER IMPORTADO
 from PySide6.QtCore import Qt, Signal
-from ui.Resumo import AbaResumo
+from ui.resumo import AbaResumo
 from ui.receitas import AbaReceitas
 from ui.despesas import TelaDespesas
 from ui.limite import AbaLimites

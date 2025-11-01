@@ -3,22 +3,24 @@ from PySide6.QtWidgets import (
     QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView, QDialog, QFormLayout, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, QDate
+from database.di_container import DIContainer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from datetime import date, datetime
 import sys
 
 from models.despesa import Despesa
+from models.lista_despesas import ListaDespesas
 
 class TelaDespesas(QWidget):
-    def __init__(self, di_container):
+    def __init__(self, di_container: DIContainer):
         super().__init__()
         self.di_container = di_container
         self.setWindowTitle("Extrato de Despesas")
         self.resize(1000, 600)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        self.despesas = self.di_container.transacao_repository.get_despesas_by_user(self.di_container.usuario_ativo.id)
+        self.despesas = ListaDespesas(di_container)
 
         main_layout = QVBoxLayout(self)
 
@@ -99,11 +101,13 @@ class TelaDespesas(QWidget):
         self.graficos_layout.addWidget(self.canvas_cat)
 
         # Carregar dados
-        self.carregar_despesas(self.despesas)
-        self.atualizar_graficos(self.despesas)
+        self.carregar_despesas()
+        self.atualizar_graficos()
 
     # ================= Funções =================
-    def carregar_despesas(self, lista):
+    def carregar_despesas(self, lista = None):
+        if lista is None:
+            lista = self.despesas.lista_despesas
         self.tabela.setRowCount(0)
         total = 0
         for d in lista:
@@ -128,34 +132,24 @@ class TelaDespesas(QWidget):
         tipo = self.tipo_combo.currentText()
         categoria = self.categoria_combo.currentText()
 
-        filtradas = []
-        for d in self.despesas:
-            data_desp = datetime(d.data.year, d.data.month, d.data.day) if isinstance(d.data, date) else d.data
-            if ini <= data_desp <= fim:
-                if (tipo == "Todos" or d.metodo_pagamento == tipo) and (categoria == "Todos" or d.categoria == categoria):
-                    filtradas.append(d)
+        filtradas = self.despesas.filtrar_despesas(ini, fim, tipo, categoria)
 
         self.carregar_despesas(filtradas)
         self.atualizar_graficos(filtradas)
 
     # TODO: Nao esta funcionando
-    def atualizar_graficos(self, lista=None):
-        if lista is None:
-            lista = self.despesas
-
+    def atualizar_graficos(self, lista = None):
         # --- Gráfico por Tipo ---
-        tipos = ["Pix", "Crédito", "Débito", "Dinheiro"]
-        valores_tipo = [sum(d.valor for d in lista if d.metodo_pagamento==t) for t in tipos]
+        if lista is None:
+            lista = self.despesas.lista_despesas
 
-        tipos_filtrados = [t for t, v in zip(tipos, valores_tipo) if v > 0]
-        valores_filtrados = [v for v in valores_tipo if v > 0]
+        tipos_filtrados, valores_filtrados = self.despesas.informacoes_grafico_tipo(lista)
 
         self.fig_tipo.clear()
         ax1 = self.fig_tipo.add_subplot(111)
         ax1.set_facecolor('#1e1e2f')
         self.fig_tipo.patch.set_facecolor('#1e1e2f')
         
-        # Colors for tipo graph
         colors_tipo = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FFA726', '#AB47BC']
         
 
@@ -169,7 +163,6 @@ class TelaDespesas(QWidget):
             wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
         
-        # Style percentage texts
         for autotext in autotexts1:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
@@ -178,11 +171,7 @@ class TelaDespesas(QWidget):
         self.canvas_tipo.draw()
 
         # --- Gráfico por Categoria ---
-        categorias = list(set(d.categoria for d in lista))
-        valores_cat = [sum(d.valor for d in lista if d.categoria==c) for c in categorias]
-
-        categorias_filtradas = [c for c, v in zip(categorias, valores_cat) if v > 0]
-        valores_cat_filtrados = [v for v in valores_cat if v > 0]
+        categorias_filtradas, valores_cat_filtrados = self.despesas.informacoes_grafico_categoria(lista)
 
         self.fig_cat.clear()
         ax2 = self.fig_cat.add_subplot(111)
@@ -201,7 +190,6 @@ class TelaDespesas(QWidget):
             wedgeprops=dict(width=0.5, edgecolor='none', linewidth=0)
         )
         
-        # Style percentage texts
         for autotext in autotexts2:
             autotext.set_color('white')
             autotext.set_fontweight('bold')
@@ -238,12 +226,10 @@ class TelaDespesas(QWidget):
         layout.addWidget(buttons)
 
         def adicionar():
-            # Validate description
             if not input_desc.text().strip():
                 QMessageBox.warning(dialog, "Erro", "O campo descrição não pode estar vazio.")
                 return
 
-            # Validate value
             try:
                 valor = float(input_valor.text().replace(",", "."))
                 if valor <= 0:
@@ -252,7 +238,6 @@ class TelaDespesas(QWidget):
                 QMessageBox.warning(dialog, "Erro", "Insira um valor numérico positivo.")
                 return
 
-            # Validate date
             qdate = input_data.date() 
             if not qdate.isValid():
                 QMessageBox.warning(dialog, "Erro", "Data inválida.")
@@ -260,7 +245,6 @@ class TelaDespesas(QWidget):
             
             python_date = date(qdate.year(), qdate.month(), qdate.day())
 
-            # If all validations pass:
             try:
                 nova_despesa = Despesa(
                     descricao=input_desc.text().strip(),
@@ -274,11 +258,10 @@ class TelaDespesas(QWidget):
 
                 self.di_container.transacao_repository.add(nova_despesa)
 
-                despesas_db = self.di_container.transacao_repository.get_despesas_by_user(
-                    self.di_container.usuario_ativo.id
-                )
-                self.carregar_despesas(despesas_db)
-                self.atualizar_graficos(despesas_db)
+                self.despesas.atualizar_despesas()
+
+                self.carregar_despesas()
+                self.atualizar_graficos()
 
                 dialog.accept()
 

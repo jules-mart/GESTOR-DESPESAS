@@ -97,7 +97,7 @@ class AbaLimites(QWidget):
                 child.widget().deleteLater()
 
         for categoria, valor_limite in self.limites.items():
-            gasto_categoria = self.gastos_atuais.get(categoria, 0)
+            gasto_categoria = self.gastos_atuais.get(categoria)
             limite_widget = LimiteWidget(
                 categoria, gasto_categoria, valor_limite)
             self.limites_layout.addWidget(limite_widget)

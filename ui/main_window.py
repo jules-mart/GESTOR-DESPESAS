@@ -1,8 +1,8 @@
 # main.py (VERSÃO FINAL E CORRIGIDA)
 import sys
 from PySide6.QtWidgets import QApplication
-from ui.Login import TelaLogin
-from ui.TelaPrincipal import TelaPrincipal
+from ui.login import TelaLogin
+from ui.tela_principal import TelaPrincipal
 
 
 class AppController:
