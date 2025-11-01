@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit,
     QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView, QDialog, QFormLayout, QDialogButtonBox
 )
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, Signal
 from database.di_container import DIContainer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -13,6 +13,7 @@ from models.despesa import Despesa
 from models.lista_despesas import ListaDespesas
 
 class TelaDespesas(QWidget):
+    despesa_adicionada = Signal()
     def __init__(self, di_container: DIContainer):
         super().__init__()
         self.di_container = di_container
@@ -264,7 +265,7 @@ class TelaDespesas(QWidget):
                 self.atualizar_graficos()
 
                 dialog.accept()
-
+                self.despesa_adicionada.emit()
             except Exception as e:
                 QMessageBox.warning(dialog, "Erro", f"Erro ao salvar no banco de dados: {e}")
 

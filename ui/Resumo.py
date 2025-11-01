@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.patches import ConnectionPatch
+from models.estatisticas import Estatisticas
 import numpy as np
 from models.despesa import Despesa
 from models.receita import Receita
@@ -134,20 +135,10 @@ class AbaResumo(QWidget):
         # Layout principal da aba
         main_layout = QHBoxLayout(self)
 
-        transacoes = di_container.transacao_repository.get_current_month_transactions(
-            di_container.usuario_ativo.id)
-        receitas = [t for t in transacoes if isinstance(t, Receita)]
-        despesas = [t for t in transacoes if isinstance(t, Despesa)]
-        total_receitas = sum(r.get_valor_com_sinal() for r in receitas)
-        total_despesas = sum(d.get_valor_com_sinal() for d in despesas)
-
-        saldo_restante = total_receitas + total_despesas
-
-        if saldo_restante < 0:
-            saldo_restante = 0
+        self.estatisticas = Estatisticas(di_container)
 
         # Frame para o Gráfico (Esquerda)
-        if total_despesas > 0 or total_receitas > 0:
+        if self.estatisticas.total_despesas > 0 or self.estatisticas.total_receitas > 0:
             chart_frame = QFrame()
             chart_frame.setStyleSheet("background-color: #1e1e2f; border-radius: 15px;")
             chart_layout = QVBoxLayout(chart_frame)
@@ -155,7 +146,7 @@ class AbaResumo(QWidget):
             main_layout.addWidget(chart_frame, 1)
 
             # Create interactive chart
-            self.chart = InteractiveDonutChart(total_receitas, total_despesas, saldo_restante)
+            self.chart = InteractiveDonutChart(self.estatisticas.total_receitas, self.estatisticas.total_despesas, self.estatisticas.saldo_restante)
             chart_layout.addWidget(self.chart)
 
         else:
@@ -210,7 +201,7 @@ class AbaResumo(QWidget):
         receita_layout = QHBoxLayout(receita_frame)
         receita_icon = QLabel("💰")
         receita_icon.setStyleSheet("font-size: 18px;")
-        receita_text = QLabel(f"Receitas: R$ {total_receitas:,.2f}")
+        receita_text = QLabel(f"Receitas: R$ {self.estatisticas.total_receitas:,.2f}")
         receita_text.setStyleSheet("font-size: 14px; font-weight: bold;")
         receita_layout.addWidget(receita_icon)
         receita_layout.addWidget(receita_text)
@@ -229,7 +220,7 @@ class AbaResumo(QWidget):
         despesa_layout = QHBoxLayout(despesa_frame)
         despesa_icon = QLabel("💸")
         despesa_icon.setStyleSheet("font-size: 18px;")
-        despesa_text = QLabel(f"Despesas: R$ {abs(total_despesas):,.2f}")
+        despesa_text = QLabel(f"Despesas: R$ {abs(self.estatisticas.total_despesas):,.2f}")
         despesa_text.setStyleSheet("font-size: 14px; font-weight: bold;")
         despesa_layout.addWidget(despesa_icon)
         despesa_layout.addWidget(despesa_text)
@@ -238,7 +229,7 @@ class AbaResumo(QWidget):
 
         # Saldo card - different color from receitas
         saldo_frame = QFrame()
-        saldo_color = "#42a5f5" if saldo_restante >= 0 else "#ef5350"
+        saldo_color = "#42a5f5" if self.estatisticas.saldo_restante >= 0 else "#ef5350"
         saldo_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {saldo_color}20;
@@ -249,7 +240,7 @@ class AbaResumo(QWidget):
         saldo_layout = QHBoxLayout(saldo_frame)
         saldo_icon = QLabel("⚖️")
         saldo_icon.setStyleSheet("font-size: 20px;")
-        saldo_text = QLabel(f"Saldo: R$ {saldo_restante:,.2f}")
+        saldo_text = QLabel(f"Saldo: R$ {self.estatisticas.saldo_restante:,.2f}")
         saldo_text.setStyleSheet("font-size: 16px; font-weight: bold;")
         saldo_layout.addWidget(saldo_icon)
         saldo_layout.addWidget(saldo_text)
@@ -259,19 +250,16 @@ class AbaResumo(QWidget):
         stats_frame = QFrame()
         stats_layout = QVBoxLayout(stats_frame)
         
-        if total_receitas > 0:
-            porcentagem_gasta = (abs(total_despesas) / total_receitas) * 100
-            economia_percentual = 100 - porcentagem_gasta
-            
+        if self.estatisticas.total_receitas > 0:   
             stats_label = QLabel("Estatísticas:")
             stats_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-top: 15px;")
             stats_layout.addWidget(stats_label)
             
             stats_text = QLabel(
-                f"• {porcentagem_gasta:.1f}% da renda gasta\n"
-                f"• {economia_percentual:.1f}% da renda economizada\n"
-                f"• {len(receitas)} receita(s)\n"
-                f"• {len(despesas)} despesa(s)"
+                f"• {self.estatisticas.porcentagem_gasta:.1f}% da renda gasta\n"
+                f"• {self.estatisticas.economia_percentual:.1f}% da renda economizada\n"
+                f"• {len(self.estatisticas.receitas)} receita(s)\n"
+                f"• {len(self.estatisticas.despesas)} despesa(s)"
             )
             stats_text.setStyleSheet("font-size: 12px; color: #cccccc; line-height: 1.5;")
             stats_layout.addWidget(stats_text)

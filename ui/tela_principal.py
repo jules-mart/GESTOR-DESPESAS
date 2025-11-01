@@ -36,16 +36,21 @@ class TelaPrincipal(QMainWindow):
         """)
         layout_principal.addWidget(self.tab_view)
 
+        self.aba_resumo = AbaResumo(self.di_container)
+        self.aba_receitas = AbaReceitas(self.di_container)
+        self.aba_despesas = TelaDespesas(self.di_container)
+
+
         # --- Adiciona as abas ---
-        self.tab_view.addTab(AbaResumo(self.di_container), "Resumo")
-        self.tab_view.addTab(AbaReceitas(self.di_container), "Receitas")
-        self.tab_view.addTab(TelaDespesas(self.di_container), "Despesas")
+        
+        self.tab_view.addTab(self.aba_resumo, "Resumo")
+        self.tab_view.addTab(self.aba_receitas, "Receitas")
+        self.tab_view.addTab(self.aba_despesas, "Despesas")
         self.tab_view.addTab(AbaLimites(self.di_container), "Limites")
 
-        receitas_exemplo = {i: 5000 for i in range(1, 13)}
-        despesas_exemplo = {i: 3000 for i in range(1, 13)}
-        self.tab_view.addTab(
-            AbaMeta(receitas=receitas_exemplo, despesas=despesas_exemplo), "Metas")
+        self.aba_receitas.receita_adicionada.connect(self.atualizar_resumo)
+        self.aba_despesas.despesa_adicionada.connect(self.atualizar_resumo)
+
 
         aba_usuario = AbaUsuario(self.di_container)
         aba_usuario.logout_solicitado.connect(self.realizar_logout)
@@ -58,3 +63,9 @@ class TelaPrincipal(QMainWindow):
         self.di_container.usuario_ativo = None
         self.logout_efetuado.emit()
         self.close()
+
+    def atualizar_resumo(self):
+        # Recria ou atualiza os dados do resumo
+        self.tab_view.removeTab(0)
+        self.aba_resumo = AbaResumo(self.di_container)
+        self.tab_view.insertTab(0, self.aba_resumo, "Resumo")
