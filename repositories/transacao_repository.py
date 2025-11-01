@@ -16,6 +16,18 @@ class TransacaoRepository:
         session.commit()
         session.close()
 
+    def update(self, transacao: Transacao):
+        session = self.__session_factory()
+        session.merge(transacao) 
+        session.commit()
+        session.close()
+
+    def delete(self, transacao: Transacao):
+        session = self.__session_factory()
+        session.delete(transacao)
+        session.commit()
+        session.close()
+
     def get_transacoes_by_user(self, usuario_id):
         session = self.__session_factory()
         items = session.query(Transacao).filter(Transacao.usuario_id == usuario_id).all()
