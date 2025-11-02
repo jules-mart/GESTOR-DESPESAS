@@ -39,6 +39,8 @@ class TelaPrincipal(QMainWindow):
         self.aba_resumo = AbaResumo(self.di_container)
         self.aba_receitas = AbaReceitas(self.di_container)
         self.aba_despesas = TelaDespesas(self.di_container)
+        self.aba_limites = AbaLimites(self.di_container)
+
 
 
         # --- Adiciona as abas ---
@@ -46,10 +48,11 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.addTab(self.aba_resumo, "Resumo")
         self.tab_view.addTab(self.aba_receitas, "Receitas")
         self.tab_view.addTab(self.aba_despesas, "Despesas")
-        self.tab_view.addTab(AbaLimites(self.di_container), "Limites")
+        self.tab_view.addTab(self.aba_limites, "Limites")
 
         self.aba_receitas.receita_adicionada.connect(self.atualizar_resumo)
         self.aba_despesas.despesa_adicionada.connect(self.atualizar_resumo)
+        self.aba_despesas.despesa_adicionada.connect(self.atualizar_limites)
 
 
         aba_usuario = AbaUsuario(self.di_container)
@@ -58,14 +61,17 @@ class TelaPrincipal(QMainWindow):
 
         self.tab_view.setCurrentIndex(0)
 
-    # --- 3. ESTA FUNÇÃO USA O "RÁDIO" PARA AVISAR O main.py ---
     def realizar_logout(self):
         self.di_container.usuario_ativo = None
         self.logout_efetuado.emit()
         self.close()
 
     def atualizar_resumo(self):
-        # Recria ou atualiza os dados do resumo
         self.tab_view.removeTab(0)
         self.aba_resumo = AbaResumo(self.di_container)
         self.tab_view.insertTab(0, self.aba_resumo, "Resumo")
+
+    def atualizar_limites(self):
+        self.tab_view.removeTab(0)
+        self.aba_limites = AbaLimites(self.di_container)
+        self.tab_view.insertTab(0, self.aba_limites, "Limites")

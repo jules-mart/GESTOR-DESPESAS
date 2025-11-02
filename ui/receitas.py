@@ -279,6 +279,7 @@ class AbaReceitas(QWidget):
                 self.receitas.editar_receita(receita)
                 self.carregar_receitas()
                 self.atualizar_graficos()
+                self.receita_adicionada.emit()
                 dialog.accept()
             except Exception as e:
                 QMessageBox.warning(dialog, "Erro", f"Não foi possível salvar: {e}")
@@ -299,5 +300,6 @@ class AbaReceitas(QWidget):
                 self.receitas.excluir_receita(receita)
                 self.carregar_receitas()
                 self.atualizar_graficos()
+                self.receita_adicionada.emit()
             except Exception as e:
                 QMessageBox.warning(self, "Erro", f"Não foi possível excluir: {e}")

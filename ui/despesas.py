@@ -194,6 +194,7 @@ class TelaDespesas(QWidget):
                 self.carregar_despesas()
                 self.atualizar_graficos()
                 dialog.accept()
+                self.despesa_adicionada.emit()
             except Exception as e:
                 QMessageBox.warning(dialog, "Erro", f"Não foi possível salvar: {e}")
 
@@ -214,6 +215,7 @@ class TelaDespesas(QWidget):
                 self.despesas.atualizar_despesas()
                 self.carregar_despesas()
                 self.atualizar_graficos()
+                self.despesa_adicionada.emit()
             except Exception as e:
                 QMessageBox.warning(self, "Erro", f"Não foi possível excluir: {e}")
 

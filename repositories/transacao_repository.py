@@ -78,8 +78,3 @@ class TransacaoRepository:
         )
         session.close()
         return despesas
-    
-
-    # TODO
-    def get_balance(id):
-        pass
