@@ -1,15 +1,16 @@
-# ui/Receitas.py (CORRIGIDO)
-
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit,
-    QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView, QDialog, QFormLayout, QDialogButtonBox
+    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QDateEdit,
+    QComboBox, QPushButton, QLineEdit, QLabel, QMessageBox, QHeaderView,
+    QDialog, QFormLayout, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, QDate, Signal
-from database.di_container import DIContainer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from datetime import date
+from datetime import date, datetime
+
 from models.receita import Receita
+from models.lista_receitas import ListaReceitas
+from database.di_container import DIContainer
 
 
 class AbaReceitas(QWidget):
@@ -19,16 +20,40 @@ class AbaReceitas(QWidget):
         super().__init__()
         self.di_container = di_container
         self.setWindowTitle("Extrato de Receitas")
+        self.resize(1000, 600)
         self.setStyleSheet("background-color: #1e1e2f; color: white;")
 
-        # Dados de exemplo de RECEITAS
-        self.receitas = self.di_container.transacao_repository.get_receitas_by_user(
-            self.di_container.usuario_ativo.id
-        )
+        # Lista centralizada
+        self.receitas = ListaReceitas(di_container)
 
         main_layout = QVBoxLayout(self)
 
-        # ======= Filtros =======
+        # Filtros
+        filtro_layout = QHBoxLayout()
+
+        self.data_ini = QDateEdit()
+        self.data_ini.setCalendarPopup(True)
+        self.data_ini.setDisplayFormat("dd-MM-yyyy")
+        self.data_ini.setSpecialValueText("Data inicial")
+        self.data_ini.setDateRange(QDate(1900, 1, 1), QDate(2100, 12, 31))
+        self.data_ini.setDate(self.data_ini.minimumDate())
+
+        self.data_fim = QDateEdit()
+        self.data_fim.setCalendarPopup(True)
+        self.data_fim.setDisplayFormat("dd-MM-yyyy")
+        self.data_fim.setSpecialValueText("Data final")
+        self.data_fim.setDateRange(QDate(1900, 1, 1), QDate(2100, 12, 31))
+        self.data_fim.setDate(QDate.currentDate())
+
+        self.tipo_combo = QComboBox()
+        self.tipo_combo.addItems(["Todos", "Pix", "Transferência", "Dinheiro"])
+
+        self.categoria_combo = QComboBox()
+        self.categoria_combo.addItems(["Todos", "Salário", "Trabalho Extra", "Vendas"])
+
+        self.btn_filtrar = QPushButton("Filtrar")
+        self.btn_filtrar.clicked.connect(self.filtrar_receitas)
+
         self.btn_adicionar = QPushButton("＋ Adicionar Receita")
         self.btn_adicionar.setStyleSheet("""
             QPushButton {
@@ -38,51 +63,25 @@ class AbaReceitas(QWidget):
             QPushButton:hover { background-color: #2563eb; }
         """)
         self.btn_adicionar.clicked.connect(self.abrir_adicionar_receita)
-        
-        filtro_layout = QHBoxLayout()
-        self.data_ini = QDateEdit()
-        self.data_ini.setCalendarPopup(True)
-        self.data_ini.setDisplayFormat("dd-MM-yyyy")
-        self.data_ini.setDate(QDate(1900, 1, 1))
 
-        self.data_fim = QDateEdit()
-        self.data_fim.setCalendarPopup(True)
-        self.data_fim.setDisplayFormat("dd-MM-yyyy")
-        self.data_fim.setDate(QDate.currentDate())
-
-        self.tipo_combo = QComboBox()
-        self.tipo_combo.addItems(["Todos", "Transferência", "Pix", "Dinheiro"])
-
-        self.categoria_combo = QComboBox()
-        self.categoria_combo.addItems(["Todos", "Salário", "Trabalho Extra", "Vendas"])
-
-        self.btn_filtrar = QPushButton("Filtrar")
-        self.btn_filtrar.clicked.connect(self.filtrar_receitas)
-
-        # Adicionando widgets na ordem correta (botão por último)
         for widget in [self.data_ini, self.data_fim, self.tipo_combo, self.categoria_combo, self.btn_filtrar, self.btn_adicionar]:
             filtro_layout.addWidget(widget)
-
         main_layout.addLayout(filtro_layout)
 
-        # ======= Conteúdo principal =======
+        # Conteúdo principal
         content_layout = QHBoxLayout()
         main_layout.addLayout(content_layout)
 
-        # ======= Tabela =======
+        # Tabela à esquerda
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(7)
-        self.tabela.setHorizontalHeaderLabels(
-            ["Data", "Descrição", "Tipo", "Categoria", "Valor", "Editar", "Excluir"]
-        )
+        self.tabela.setHorizontalHeaderLabels(["Data", "Descrição", "Tipo", "Categoria", "Valor", "Editar", "Excluir"])
         self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tabela.setStyleSheet(
-            "background-color: #2c2c3c; color: white; border:none;"
-        )
+        self.tabela.setStyleSheet("background-color: #2c2c3c; color: white; border:none;")
         self.tabela.setShowGrid(False)
         content_layout.addWidget(self.tabela)
 
-        # ======= Gráficos =======
+        # Gráficos à direita
         self.graficos_layout = QVBoxLayout()
         content_layout.addLayout(self.graficos_layout)
 
@@ -101,15 +100,16 @@ class AbaReceitas(QWidget):
         self.canvas_cat = FigureCanvas(self.fig_cat)
         self.graficos_layout.addWidget(self.canvas_cat)
 
-        # ======= Dados iniciais =======
-        self.carregar_receitas(self.receitas)
-        self.atualizar_graficos(self.receitas)
+        # Carregar dados
+        self.carregar_receitas()
+        self.atualizar_graficos()
 
-    # =======================
-    def carregar_receitas(self, lista):
+    # ================= Funções =================
+    def carregar_receitas(self, lista=None):
+        if lista is None:
+            lista = self.receitas.lista_receitas
         self.tabela.setRowCount(0)
         total = 0
-
         for r in lista:
             row = self.tabela.rowCount()
             self.tabela.insertRow(row)
@@ -122,11 +122,9 @@ class AbaReceitas(QWidget):
 
             # Botão editar
             btn_editar = QPushButton("✏️")
-            btn_editar.setStyleSheet(
-                "background-color: #3b82f6; color: white; border-radius: 4px; font-size: 11px; padding: 1px;"
-            )
+            btn_editar.setStyleSheet("background-color: #3b82f6; color: white; border-radius: 4px; font-size: 11px; padding: 1px;")
             btn_editar.setFixedSize(28, 22)
-            btn_editar.clicked.connect(lambda _, receita=r: self.editar_receita(receita))
+            btn_editar.clicked.connect(lambda _, rec=r: self.editar_receita(rec))
             widget_editar = QWidget()
             layout_editar = QHBoxLayout(widget_editar)
             layout_editar.addWidget(btn_editar)
@@ -136,11 +134,9 @@ class AbaReceitas(QWidget):
 
             # Botão excluir
             btn_excluir = QPushButton("🗑️")
-            btn_excluir.setStyleSheet(
-                "background-color: #ef4444; color: white; border-radius: 4px; font-size: 11px; padding: 1px;"
-            )
+            btn_excluir.setStyleSheet("background-color: #ef4444; color: white; border-radius: 4px; font-size: 11px; padding: 1px;")
             btn_excluir.setFixedSize(28, 22)
-            btn_excluir.clicked.connect(lambda _, receita=r: self.excluir_receita(receita))
+            btn_excluir.clicked.connect(lambda _, rec=r: self.excluir_receita(rec))
             widget_excluir = QWidget()
             layout_excluir = QHBoxLayout(widget_excluir)
             layout_excluir.addWidget(btn_excluir)
@@ -150,56 +146,38 @@ class AbaReceitas(QWidget):
 
         self.label_total.setText(f"Total de Receitas: R$ {total:.2f}")
 
-    # =======================
     def filtrar_receitas(self):
-        ini = date(self.data_ini.date().year(), self.data_ini.date().month(), self.data_ini.date().day())
-        fim = date(self.data_fim.date().year(), self.data_fim.date().month(), self.data_fim.date().day())
+        ini_qdate = self.data_ini.date()
+        fim_qdate = self.data_fim.date()
+        ini = datetime(ini_qdate.year(), ini_qdate.month(), ini_qdate.day())
+        fim = datetime(fim_qdate.year(), fim_qdate.month(), fim_qdate.day())
         tipo = self.tipo_combo.currentText()
         categoria = self.categoria_combo.currentText()
-
-        filtradas = [
-            r for r in self.receitas
-            if ini <= r.data <= fim and
-            (tipo == "Todos" or r.metodo_pagamento == tipo) and
-            (categoria == "Todos" or r.categoria == categoria)
-        ]
+        filtradas = self.receitas.filtrar_receitas(ini, fim, tipo, categoria)
         self.carregar_receitas(filtradas)
         self.atualizar_graficos(filtradas)
 
-    # =======================
     def atualizar_graficos(self, lista=None):
         if lista is None:
-            lista = self.receitas
+            lista = self.receitas.lista_receitas
 
-        # --- Gráfico Tipo ---
-        tipos = list(set(r.metodo_pagamento for r in lista))
-        valores_tipo = [sum(r.valor for r in lista if r.metodo_pagamento == t) for t in tipos]
+        tipos, valores_tipo = self.receitas.informacoes_grafico_tipo(lista)
+        categorias, valores_cat = self.receitas.informacoes_grafico_categoria(lista)
 
+        # Gráfico tipo
         self.fig_tipo.clear()
         ax1 = self.fig_tipo.add_subplot(111)
         ax1.set_facecolor('#1e1e2f')
-        self.fig_tipo.patch.set_facecolor('#1e1e2f')
-        ax1.pie(
-            valores_tipo, labels=tipos, autopct='%1.1f%%',
-            textprops={'color': 'white'}, startangle=90
-        )
+        ax1.pie(valores_tipo, labels=tipos, autopct='%1.1f%%', textprops={'color': 'white'}, startangle=90)
         self.canvas_tipo.draw()
 
-        # --- Gráfico Categoria ---
-        categorias = list(set(r.categoria for r in lista))
-        valores_cat = [sum(r.valor for r in lista if r.categoria == c) for c in categorias]
-
+        # Gráfico categoria
         self.fig_cat.clear()
         ax2 = self.fig_cat.add_subplot(111)
         ax2.set_facecolor('#1e1e2f')
-        self.fig_cat.patch.set_facecolor('#1e1e2f')
-        ax2.pie(
-            valores_cat, labels=categorias, autopct='%1.1f%%',
-            textprops={'color': 'white'}, startangle=90
-        )
+        ax2.pie(valores_cat, labels=categorias, autopct='%1.1f%%', textprops={'color': 'white'}, startangle=90)
         self.canvas_cat.draw()
 
-    # =======================
     def abrir_adicionar_receita(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Adicionar Receita")
@@ -210,10 +188,9 @@ class AbaReceitas(QWidget):
         input_data.setCalendarPopup(True)
         input_data.setDisplayFormat("dd-MM-yyyy")
         input_data.setDate(QDate.currentDate())
-
         input_desc = QLineEdit()
         input_tipo = QComboBox()
-        input_tipo.addItems(["Transferência", "Pix", "Dinheiro"])
+        input_tipo.addItems(["Pix", "Transferência", "Dinheiro"])
         input_categoria = QComboBox()
         input_categoria.addItems(["Salário", "Trabalho Extra", "Vendas"])
         input_valor = QLineEdit()
@@ -243,7 +220,7 @@ class AbaReceitas(QWidget):
             python_date = date(qdate.year(), qdate.month(), qdate.day())
 
             nova_receita = Receita(
-                descricao=input_desc.text(),
+                descricao=input_desc.text().strip(),
                 categoria=input_categoria.currentText(),
                 metodo_pagamento=input_tipo.currentText(),
                 valor=valor,
@@ -252,10 +229,9 @@ class AbaReceitas(QWidget):
                 data=python_date
             )
 
-            self.di_container.transacao_repository.add(nova_receita)
-            receitas_db = self.di_container.transacao_repository.get_receitas_by_user(self.di_container.usuario_ativo.id)
-            self.carregar_receitas(receitas_db)
-            self.atualizar_graficos(receitas_db)
+            self.receitas.adicionar_receita(nova_receita)
+            self.carregar_receitas()
+            self.atualizar_graficos()
             dialog.accept()
             self.receita_adicionada.emit()
 
@@ -263,7 +239,6 @@ class AbaReceitas(QWidget):
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
 
-    # =======================
     def editar_receita(self, receita):
         dialog = QDialog(self)
         dialog.setWindowTitle("Editar Receita")
@@ -276,7 +251,7 @@ class AbaReceitas(QWidget):
         input_data.setDate(QDate(receita.data.year, receita.data.month, receita.data.day))
         input_desc = QLineEdit(receita.descricao)
         input_tipo = QComboBox()
-        input_tipo.addItems(["Transferência", "Pix", "Dinheiro"])
+        input_tipo.addItems(["Pix", "Transferência", "Dinheiro"])
         input_tipo.setCurrentText(receita.metodo_pagamento)
         input_categoria = QComboBox()
         input_categoria.addItems(["Salário", "Trabalho Extra", "Vendas"])
@@ -301,10 +276,9 @@ class AbaReceitas(QWidget):
                 qdate = input_data.date()
                 receita.data = date(qdate.year(), qdate.month(), qdate.day())
 
-                self.di_container.transacao_repository.update(receita)
-                receitas_db = self.di_container.transacao_repository.get_receitas_by_user(self.di_container.usuario_ativo.id)
-                self.carregar_receitas(receitas_db)
-                self.atualizar_graficos(receitas_db)
+                self.receitas.editar_receita(receita)
+                self.carregar_receitas()
+                self.atualizar_graficos()
                 dialog.accept()
             except Exception as e:
                 QMessageBox.warning(dialog, "Erro", f"Não foi possível salvar: {e}")
@@ -313,7 +287,6 @@ class AbaReceitas(QWidget):
         buttons.rejected.connect(dialog.reject)
         dialog.exec()
 
-    # =======================
     def excluir_receita(self, receita):
         resp = QMessageBox.question(
             self,
@@ -323,11 +296,8 @@ class AbaReceitas(QWidget):
         )
         if resp == QMessageBox.Yes:
             try:
-                self.di_container.transacao_repository.delete(receita)
-                receitas_db = self.di_container.transacao_repository.get_receitas_by_user(
-                    self.di_container.usuario_ativo.id
-                )
-                self.carregar_receitas(receitas_db)
-                self.atualizar_graficos(receitas_db)
+                self.receitas.excluir_receita(receita)
+                self.carregar_receitas()
+                self.atualizar_graficos()
             except Exception as e:
                 QMessageBox.warning(self, "Erro", f"Não foi possível excluir: {e}")
