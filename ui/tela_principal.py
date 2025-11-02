@@ -72,6 +72,6 @@ class TelaPrincipal(QMainWindow):
         self.tab_view.insertTab(0, self.aba_resumo, "Resumo")
 
     def atualizar_limites(self):
-        self.tab_view.removeTab(0)
+        self.tab_view.removeTab(3)
         self.aba_limites = AbaLimites(self.di_container)
-        self.tab_view.insertTab(0, self.aba_limites, "Limites")
+        self.tab_view.insertTab(3, self.aba_limites, "Limites")

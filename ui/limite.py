@@ -98,8 +98,7 @@ class AbaLimites(QWidget):
 
         for categoria, valor_limite in self.limites.items():
             gasto_categoria = self.gastos_atuais.get(categoria)
-            limite_widget = LimiteWidget(
-                categoria, gasto_categoria, valor_limite)
+            limite_widget = LimiteWidget(categoria, gasto_categoria, valor_limite, aba_limites=self)
             self.limites_layout.addWidget(limite_widget)
 
     def abrir_dialogo_limite(self):
@@ -163,11 +162,12 @@ class AbaLimites(QWidget):
 
 
 class LimiteWidget(QFrame):
-    def __init__(self, categoria, gasto, limite, parent=None):
+    def __init__(self, categoria, gasto, limite, parent=None, aba_limites=None):
         super().__init__(parent)
         self.categoria = categoria
         self.gasto = gasto
         self.limite = limite
+        self.aba_limites = aba_limites
         
         self.setStyleSheet("""
             QFrame {
@@ -265,9 +265,55 @@ class LimiteWidget(QFrame):
         main_layout.addWidget(buttons_container)
 
     def editar_limite(self):
-        # TODO
-        pass
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Editar Limite - {self.categoria}")
+        dialog.setStyleSheet("background-color: #1e1e2f; color: white;")
+
+        form_layout = QFormLayout(dialog)
+
+        input_valor = QLineEdit()
+        input_valor.setText(str(self.limite))
+        input_valor.setPlaceholderText("Ex: 500.00")
+        form_layout.addRow("Novo valor do limite (R$):", input_valor)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form_layout.addWidget(buttons)
+
+        if dialog.exec():
+            try:
+                novo_valor = float(input_valor.text().replace(",", "."))
+                limite_existente = self.aba_limites.limite_repository.get_by_categoria(
+                    self.categoria, self.aba_limites.usuario_id
+                )
+
+                if limite_existente:
+                    self.aba_limites.limite_repository.update(limite_existente.id, novo_valor)
+                    self.aba_limites.carregar_limites_do_banco()
+                else:
+                    QMessageBox.warning(self, "Erro", "Limite não encontrado para editar.")
+
+            except ValueError:
+                QMessageBox.critical(self, "Erro", "Valor inválido. Insira um número válido.")
 
     def excluir_limite(self):
-        # TODO
-        pass
+        confirm = QMessageBox.question(
+            self,
+            "Excluir Limite",
+            f"Tem certeza que deseja excluir o limite da categoria '{self.categoria}'?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+
+        if confirm == QMessageBox.Yes:
+            limite_existente = self.aba_limites.limite_repository.get_by_categoria(
+                self.categoria, self.aba_limites.usuario_id
+            )
+
+            if limite_existente:
+                self.aba_limites.limite_repository.delete(limite_existente.id)
+                self.aba_limites.carregar_limites_do_banco()
+            else:
+                QMessageBox.warning(self, "Erro", "Limite não encontrado para excluir.")
+
+
